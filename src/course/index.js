@@ -53,7 +53,7 @@ function normalizeTask(lesson, task, position, translation = {}) {
     solution: { ...starter, ...(task.solution || {}), ...(translation.solution || {}) },
     // A task may tighten the lesson's sandbox (its own mock API, its own
     // pre-filled localStorage) without repeating the rest of it.
-    sandbox: { ...(lesson.sandbox || {}), ...(task.sandbox || {}) },
+    sandbox: { ...(lesson.sandbox || {}), ...(task.sandbox || {}), ...(translation.sandbox || {}) },
     checks: patchChecks(task.checks || [], translation.checks)
   };
 }
