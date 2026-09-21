@@ -1,0 +1,16 @@
+{
+  "name": "webdev-course",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Интерактивный курс веб-разработки: 34 урока, 170 практических задач и универсальный playground с автоматической проверкой.",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "validate": "node tools/validate-course.mjs",
+    "test": "node tools/validate-course.mjs && node tools/run-selftest.mjs",
+    "test:selftest": "node tools/run-selftest.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
