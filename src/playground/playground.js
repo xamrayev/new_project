@@ -69,8 +69,7 @@ export class Playground {
     this.runButton = button(t('pg.run'), 'btn btn--sm btn--primary', () => this.run({ force: true }));
     this.checkButton = button(t('dock.check'), 'btn btn--sm btn--ok', () => this.onRequestCheck());
     this.resetButton = button(t('pg.reset'), 'btn btn--sm', () => this.onReset());
-    this.consoleButton = button(t('pg.console'), 'btn btn--sm btn--ghost', () => this.toggleConsole());
-    actions.append(this.runButton, this.checkButton, this.resetButton, this.consoleButton);
+    actions.append(this.runButton, this.checkButton, this.resetButton);
 
     bar.append(this.tabs, actions);
 
@@ -93,19 +92,21 @@ export class Playground {
     this.frame.title = t('pg.previewFrame');
     this.frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals allow-popups');
 
+    // The console sits under the preview and is always live: a student should
+    // never have to open a panel to find out why nothing happened.
     this.consolePanel = document.createElement('div');
     this.consolePanel.className = 'console';
-    this.consolePanel.hidden = true;
     const consoleHead = document.createElement('div');
     consoleHead.className = 'console__head';
     const consoleTitle = document.createElement('span');
-    consoleTitle.textContent = t('pg.consoleTitle');
+    consoleTitle.textContent = t('pg.console');
     const clear = button(t('pg.consoleClear'), 'btn btn--sm btn--ghost', () => this.clearConsole());
     clear.style.marginLeft = 'auto';
     consoleHead.append(consoleTitle, clear);
     this.consoleBody = document.createElement('div');
     this.consoleBody.className = 'console__body';
     this.consolePanel.append(consoleHead, this.consoleBody);
+    this.clearConsole();
 
     preview.append(label, this.frame, this.consolePanel);
     split.append(this.editor.root, preview);
@@ -187,7 +188,7 @@ export class Playground {
     this.source[this.active] = this.editor.value;
     this.busy = true;
     this.previewStatus.textContent = t('pg.running');
-    this.clearConsole({ keepPanel: true });
+    this.clearConsole();
     try {
       this.runner.setConfig({ ...this.sandbox, storageSeed: this.liveStorage });
       await this.runner.render(this.source);
@@ -201,7 +202,7 @@ export class Playground {
   /** Runs the task's checks against a freshly rendered page. */
   async check(checks) {
     this.source[this.active] = this.editor.value;
-    this.clearConsole({ keepPanel: true });
+    this.clearConsole();
     this.previewStatus.textContent = t('pg.checking');
     try {
       // Grading always starts from the lesson's declared storage, never from
@@ -215,23 +216,24 @@ export class Playground {
 
   /* --------------------------------------------------------------- console */
 
-  toggleConsole() {
-    this.consolePanel.hidden = !this.consolePanel.hidden;
-  }
-
-  clearConsole({ keepPanel = false } = {}) {
+  clearConsole() {
     this.consoleBody.textContent = '';
-    if (!keepPanel) this.consolePanel.hidden = true;
+    this.empty = document.createElement('div');
+    this.empty.className = 'console__empty';
+    this.empty.textContent = t('pg.consoleEmpty');
+    this.consoleBody.append(this.empty);
   }
 
   #appendConsole({ level, text }) {
+    if (this.empty) {
+      this.empty.remove();
+      this.empty = null;
+    }
     const line = document.createElement('div');
     line.className = `console__line console__line--${level}`;
     line.textContent = text;
     this.consoleBody.append(line);
     this.consoleBody.scrollTop = this.consoleBody.scrollHeight;
-    // Output the student asked for should not need a second click to be seen.
-    this.consolePanel.hidden = false;
   }
 }
 

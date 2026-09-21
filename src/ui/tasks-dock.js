@@ -83,7 +83,9 @@ export class TasksDock {
       dot.className = `task-chip__dif dif--${task.difficulty}`;
 
       const label = document.createElement('span');
+      label.className = 'task-chip__label';
       label.textContent = `${task.position}. ${task.title}`;
+      label.title = task.title;
 
       chip.append(mark, dot, label);
       chip.addEventListener('click', () => this.onSelectTask(task));

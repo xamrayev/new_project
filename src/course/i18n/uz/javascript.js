@@ -10,7 +10,7 @@ const lesson19 = {
     { p: 'Playground dagi **JS** yorlig‘i — bu ulangan `app.js` fayli. U belgilash yuklangandan keyin bajariladi.' },
     { h: 'Chiqarish' },
     { code: 'console.log("Salom, dunyo!");   // dasturchi konsoliga\nalert("Diqqat!");               // modal oyna' },
-    { p: 'Konsol preview ostidagi **Konsol** tugmasi bilan ochiladi. `alert()` chaqiruvlari ham o‘sha yerga tushadi — shunday qilib ular tekshiruvni bloklamaydi.' },
+    { p: 'Konsol doim ochiq — u jonli natija ostida turadi. U yerga `console.log()`, ogohlantirishlar, qator raqami bilan xatoliklar va `alert()` chaqiruvlari tushadi: shunday qilib ular tekshiruvni bloklamaydi.' },
     { h: 'Sintaksis' },
     { code: 'let count = 3;        // o‘zgaruvchi e’lon qilish\ncount = count + 1;    // o‘zgartirish\nconsole.log(count);   // 4\n\n// bir qatorli izoh\n/* ko‘p qatorli\n   izoh */' },
     { note: 'Buyruq oxiridagi nuqta-vergulni tashlab ketish mumkin, lekin uni qo‘yish odati g‘alati xatolarga ketadigan vaqtni tejaydi.' }

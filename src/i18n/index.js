@@ -17,7 +17,15 @@ import { ru as sandboxRu } from './sandbox/ru.js';
 import { uz as sandboxUz } from './sandbox/uz.js';
 import { uzPhrases } from './sandbox/uz-phrases.js';
 
-export const BASE_LOCALE = 'uz';
+/**
+ * The locale the content is authored in: `src/course/modules/` holds Russian
+ * and every translation is an overlay on top of it. It is also the fallback for
+ * any string a locale has not translated yet — so it is not a product choice.
+ */
+export const BASE_LOCALE = 'ru';
+
+/** What a first-time visitor gets when nothing is stored and the browser gives no hint. */
+export const DEFAULT_LOCALE = 'uz';
 
 export const LOCALES = [
   { id: 'ru', short: 'RU', label: 'Русский' },
@@ -37,12 +45,12 @@ export function isLocale(id) {
   return LOCALES.some((locale) => locale.id === id);
 }
 
-/** Stored choice wins, then the browser language, then the base locale. */
+/** Stored choice wins, then the browser language, then the default locale. */
 export function detectLocale(stored) {
   if (isLocale(stored)) return stored;
   const preferred = (typeof navigator !== 'undefined' && navigator.language) || '';
   const match = LOCALES.find((locale) => preferred.toLowerCase().startsWith(locale.id));
-  return match ? match.id : BASE_LOCALE;
+  return match ? match.id : DEFAULT_LOCALE;
 }
 
 export function interpolate(template, params) {
@@ -52,10 +60,10 @@ export function interpolate(template, params) {
   );
 }
 
-let current = BASE_LOCALE;
+let current = DEFAULT_LOCALE;
 
 export function setLocale(locale) {
-  current = isLocale(locale) ? locale : BASE_LOCALE;
+  current = isLocale(locale) ? locale : DEFAULT_LOCALE;
   if (typeof document !== 'undefined') document.documentElement.lang = current;
   return current;
 }

@@ -61,7 +61,9 @@ export class App {
       onReset: () => this.resetProgress()
     });
 
-    root.append(this.top, this.main, this.dock.root);
+    // Tasks live in the third column of the main grid, next to the playground.
+    this.main.append(this.dock.root);
+    root.append(this.top, this.main);
     document.body.append(this.sidebar.scrim, this.sidebar.root);
 
     window.addEventListener('hashchange', this.onHashChange);
