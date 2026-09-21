@@ -36,7 +36,7 @@ export const uz = {
   'pg.run': '▶ Ishga tushirish',
   'pg.reset': '↻ Tozalash',
   'pg.console': 'Konsol',
-  'pg.consoleTitle': 'Console',
+  'pg.consoleEmpty': 'Hozircha bo‘sh — bu yerda console.log() natijasi va xatoliklar chiqadi.',
   'pg.consoleClear': 'tozalash',
   'pg.preview': 'Jonli natija',
   'pg.previewFrame': 'Kod bajarilishining natijasi',

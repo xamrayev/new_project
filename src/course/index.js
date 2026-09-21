@@ -113,8 +113,8 @@ export function buildCourse(locale = BASE_LOCALE) {
   };
 }
 
-/** Locales that actually carry a content overlay (the base one always does). */
-export const CONTENT_LOCALES = [BASE_LOCALE, ...Object.keys(OVERLAYS)];
+/** Every locale the course exists in: the authored base plus each overlay. */
+export const CONTENT_LOCALES = [...new Set([BASE_LOCALE, ...Object.keys(OVERLAYS)])];
 
 /** Raw, untranslated modules — used by tooling to diff a translation against the source. */
 export { RAW_MODULES };

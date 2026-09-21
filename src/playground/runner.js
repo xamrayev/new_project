@@ -26,6 +26,9 @@ export function loadHarness() {
 
 const FULL_DOCUMENT = /<html[\s>]/i;
 const MODULE_BASE = 'https://lesson.playground/';
+// Marks where the student's script starts, so runtime errors can be reported
+// with the line number they see in the editor rather than in the built page.
+const JS_MARKER = '/*__PG_JS__*/';
 
 function escapeForScript(text) {
   // Keeps a literal "</script>" inside injected JSON/JS from closing our tag.
@@ -68,7 +71,7 @@ export function buildDocument({ html = '', css = '', js = '' }, harnessSource, c
       }))}</script>`
     : '';
   const scriptType = moduleNames.length ? ' type="module"' : '';
-  const scriptTag = js.trim() ? `<script${scriptType}>\n${escapeForScript(js)}\n</script>` : '';
+  const scriptTag = js.trim() ? `<script${scriptType}>${JS_MARKER}\n${escapeForScript(js)}\n</script>` : '';
 
   if (FULL_DOCUMENT.test(html)) {
     let out = html;
@@ -79,12 +82,12 @@ export function buildDocument({ html = '', css = '', js = '' }, harnessSource, c
       const root = injectAfterOpeningTag(out, /<html[^>]*>/i, `<head>${boot}${moduleSetup}${styleTag}</head>`);
       out = root || boot + moduleSetup + styleTag + out;
     }
-    if (/<\/body>/i.test(out)) return out.replace(/<\/body>/i, `${scriptTag}</body>`);
-    return out + scriptTag;
+    if (/<\/body>/i.test(out)) return withLineOffset(out.replace(/<\/body>/i, `${scriptTag}</body>`));
+    return withLineOffset(out + scriptTag);
   }
 
-  return `<!doctype html>
-<html lang="ru">
+  return withLineOffset(`<!doctype html>
+<html lang="${config.locale || 'ru'}">
 <head>
 <meta charset="utf-8">
 ${boot}
@@ -95,7 +98,18 @@ ${styleTag}
 ${html}
 ${scriptTag}
 </body>
-</html>`;
+</html>`);
+}
+
+/**
+ * Tells the sandbox how many lines sit above the student's script, so
+ * `ReferenceError … (line 600)` becomes `(line 3)`.
+ */
+function withLineOffset(document) {
+  const at = document.indexOf(JS_MARKER);
+  if (at === -1) return document;
+  const offset = document.slice(0, at).split('\n').length;
+  return document.replace('"jsLineOffset":0', `"jsLineOffset":${offset}`);
 }
 
 /**
@@ -188,7 +202,8 @@ export class SandboxRunner {
       modules: this.config.modules || null,
       locale: getLocale(),
       messages: sandboxMessages(),
-      phrases: sandboxPhrases()
+      phrases: sandboxPhrases(),
+      jsLineOffset: 0
     };
 
     // A fresh frame guarantees checks never observe state left over from a

@@ -12,9 +12,9 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { chromium } from 'playwright-core';
 
-const PORT = Number(process.env.PORT || 4199);
 const TIMEOUT_MS = Number(process.env.SELFTEST_TIMEOUT || 600000);
 
 const CHROMIUM_CANDIDATES = [
@@ -30,6 +30,22 @@ function findChromium() {
   return CHROMIUM_CANDIDATES.find((path) => existsSync(path)) || null;
 }
 
+/**
+ * Reserves a port by briefly listening on it. Without this a leftover server
+ * from another run answers the probe and the whole suite silently tests
+ * whatever that server happens to be serving.
+ */
+function checkPort(port) {
+  return new Promise((resolve) => {
+    const probe = createServer();
+    probe.on('error', () => resolve(0));
+    probe.listen(port, '127.0.0.1', () => {
+      const actual = probe.address().port;
+      probe.close(() => resolve(actual));
+    });
+  });
+}
+
 function queryFromArgs() {
   const query = new URLSearchParams();
   for (const argument of process.argv.slice(2)) {
@@ -40,8 +56,9 @@ function queryFromArgs() {
   return text ? `?${text}` : '';
 }
 
-async function waitForServer(url, attempts = 40) {
+async function waitForServer(url, isAlive, attempts = 40) {
   for (let i = 0; i < attempts; i++) {
+    if (!isAlive()) return false;
     try {
       const response = await fetch(url);
       if (response.ok) return true;
@@ -53,16 +70,31 @@ async function waitForServer(url, attempts = 40) {
   return false;
 }
 
+const requested = Number(process.env.PORT) || 0;
+const PORT = await checkPort(requested);
+
+if (!PORT) {
+  console.error(`\n✕ Порт ${requested} уже занят — освободите его или снимите переменную PORT.`);
+  process.exit(1);
+}
+
 const server = spawn(process.execPath, ['tools/serve.mjs', String(PORT)], {
   stdio: ['ignore', 'ignore', 'inherit']
 });
+
+let serverExit = null;
+server.on('exit', (code) => { serverExit = code === null ? 'killed' : code; });
 
 let browser = null;
 let exitCode = 0;
 
 try {
-  if (!(await waitForServer(`http://localhost:${PORT}/index.html`))) {
-    throw new Error('локальный сервер не поднялся');
+  if (!(await waitForServer(`http://localhost:${PORT}/index.html`, () => serverExit === null))) {
+    throw new Error(
+      serverExit === null
+        ? 'локальный сервер не поднялся'
+        : `сервер не запустился (порт ${PORT} занят?), см. вывод выше`
+    );
   }
 
   const executablePath = findChromium();

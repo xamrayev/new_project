@@ -97,7 +97,10 @@
   console.table = function (data) { record('log', [data]); };
 
   window.addEventListener('error', function (event) {
-    var text = event.message + (event.lineno ? msg('error.line', { line: event.lineno }) : '');
+    // Line numbers come from the assembled page; subtract everything the
+    // harness itself added so the number matches the editor.
+    var line = event.lineno ? event.lineno - (CFG.jsLineOffset || 0) : 0;
+    var text = event.message + (line > 0 ? msg('error.line', { line: line }) : '');
     ERRORS.push(text);
     CONSOLE_LOG.push({ level: 'error', text: text });
     post({ type: 'console', level: 'error', text: text });

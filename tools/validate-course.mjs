@@ -8,7 +8,7 @@
  * Behaviour (do the solutions actually pass?) is covered by tests/selftest.
  */
 import { buildCourse, CONTENT_LOCALES } from '../src/course/index.js';
-import { LOCALES } from '../src/i18n/index.js';
+import { BASE_LOCALE, LOCALES } from '../src/i18n/index.js';
 import { uz } from '../src/course/i18n/uz/index.js';
 
 const OVERLAYS = { uz };
@@ -186,11 +186,11 @@ function validateOverlay(locale, overlay, base) {
   return stats;
 }
 
-const base = validateCourse('ru');
+const base = validateCourse(BASE_LOCALE);
 const coverage = [];
 
 for (const locale of CONTENT_LOCALES) {
-  if (locale === 'ru') continue;
+  if (locale === BASE_LOCALE) continue;
   validateCourse(locale);
   coverage.push({ locale, ...validateOverlay(locale, OVERLAYS[locale] || {}, base) });
 }

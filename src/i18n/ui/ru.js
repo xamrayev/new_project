@@ -36,7 +36,7 @@ export const ru = {
   'pg.run': '▶ Запустить',
   'pg.reset': '↻ Сброс',
   'pg.console': 'Консоль',
-  'pg.consoleTitle': 'Console',
+  'pg.consoleEmpty': 'Пока пусто — здесь появится вывод console.log() и ошибки.',
   'pg.consoleClear': 'очистить',
   'pg.preview': 'Live preview',
   'pg.previewFrame': 'Результат выполнения кода',
