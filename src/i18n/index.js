@@ -17,7 +17,7 @@ import { ru as sandboxRu } from './sandbox/ru.js';
 import { uz as sandboxUz } from './sandbox/uz.js';
 import { uzPhrases } from './sandbox/uz-phrases.js';
 
-export const BASE_LOCALE = 'ru';
+export const BASE_LOCALE = 'uz';
 
 export const LOCALES = [
   { id: 'ru', short: 'RU', label: 'Русский' },
