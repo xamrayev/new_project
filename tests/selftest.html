@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Self-test: решения против проверок</title>
+<link rel="stylesheet" href="../styles/app.css">
+<style>
+  body { padding: 20px 24px 60px; }
+  h1 { font-size: 20px; }
+  #summary { font-family: var(--mono); margin: 12px 0 20px; }
+  .lesson { margin-bottom: 10px; }
+  .lesson h3 { font-size: 14px; margin: 0 0 4px; }
+  .row { font-family: var(--mono); font-size: 12.5px; padding: 2px 0; }
+  .row.ok { color: var(--ok); }
+  .row.bad { color: var(--err); }
+  .why { color: var(--text-faint); }
+  #frame-host { position: fixed; right: 8px; bottom: 8px; width: 960px; height: 640px; opacity: .001; pointer-events: none; }
+  iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+</style>
+</head>
+<body>
+<h1>Self-test курса</h1>
+<p id="summary">Запуск…</p>
+<div id="report"></div>
+<div id="frame-host"><iframe title="sandbox"></iframe></div>
+<script type="module" src="./selftest.js"></script>
+</body>
+</html>

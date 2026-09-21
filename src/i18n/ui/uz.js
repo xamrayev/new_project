@@ -1,0 +1,71 @@
+/* Interfeys — o'zbekcha. Kalitlar ru.js bilan bir xil bo'lishi shart. */
+export const uz = {
+  'app.title': 'Web Development',
+  'app.boot': 'Kurs yuklanmoqda…',
+  'app.bootFailed': 'Kursni ishga tushirib bo‘lmadi',
+  'app.bootHint': 'Loyihani faylni ikki marta bosib emas, lokal server orqali ochish kerak:',
+
+  'top.courseMap': 'Kurs dasturi',
+  'top.previousLesson': 'Oldingi dars',
+  'top.nextLesson': 'Keyingi dars',
+  'top.toggleTheme': 'Mavzuni almashtirish',
+  'top.language': 'Interfeys tili',
+  'top.lesson': '{number}-dars. {title}',
+
+  'sidebar.close': 'Yopish',
+  'sidebar.resetProgress': 'Natijalarni tozalash',
+  'sidebar.summary': '{lessons}/{lessonsTotal} dars · {tasks}/{tasksTotal} topshiriq',
+
+  'dock.title': 'Topshiriqlar',
+  'dock.task': '{number}-topshiriq. {title}',
+  'dock.solved': '✓ bajarildi',
+  'dock.check': '✓ Tekshirish',
+  'dock.checking': 'Tekshirilmoqda…',
+  'dock.hint': '💡 Maslahat ({shown}/{total})',
+  'dock.hintsShown': 'Maslahatlar ko‘rsatildi',
+  'dock.restart': '↻ Qaytadan boshlash',
+  'dock.showSolution': 'Yechimni ko‘rsatish',
+  'dock.next': 'Keyingisi →',
+  'dock.allPassed': '✓ Topshiriq bajarildi!',
+  'dock.somePassed': '{total} tekshiruvdan {passed} tasi o‘tdi — nima mos kelmaganini ko‘ring.',
+
+  'difficulty.easy': 'oson',
+  'difficulty.medium': 'o‘rtacha',
+  'difficulty.hard': 'qiyin',
+
+  'pg.run': '▶ Ishga tushirish',
+  'pg.reset': '↻ Tozalash',
+  'pg.console': 'Konsol',
+  'pg.consoleTitle': 'Console',
+  'pg.consoleClear': 'tozalash',
+  'pg.preview': 'Jonli natija',
+  'pg.previewFrame': 'Kod bajarilishining natijasi',
+  'pg.running': 'Bajarilmoqda…',
+  'pg.checking': 'Tekshirilmoqda…',
+
+  'editor.label': 'Kod muharriri',
+  'editor.position': '{line}-qator, {column}-ustun',
+  'editor.runHint': 'Ctrl/Cmd + Enter — ishga tushirish',
+  'editor.placeholder.html': '<!-- HTML kodingiz -->',
+  'editor.placeholder.css': '/* CSS kodingiz */',
+  'editor.placeholder.js': '// JavaScript kodingiz',
+
+  'confirm.resetTask': 'Topshiriqning boshlang‘ich kodi qaytarilsinmi? O‘zgarishlaringiz yo‘qoladi.',
+  'confirm.showSolution': 'Tayyor yechim ko‘rsatilsinmi? Avval maslahatlardan foydalanib ko‘ring.',
+  'confirm.resetProgress': 'Barcha natijalar va saqlangan kod o‘chirilsinmi? Buni ortga qaytarib bo‘lmaydi.',
+
+  'toast.taskReset': 'Topshiriq kodi tozalandi',
+  'toast.solutionLoaded': 'Yechim muharrirga yuklandi — uni o‘rganing va ishga tushiring',
+  'toast.progressReset': 'Natijalar tozalandi',
+  'toast.taskDone': 'Topshiriq hisobga olindi!',
+  'toast.lessonDone': 'Dars to‘liq yakunlandi: {done}/{total} 🎉',
+  'toast.nextLesson': '{number}-dars yakunlandi. Keyingisi: {title}',
+  'toast.courseDone': 'Bu kursning oxirgi topshirig‘i edi. Tabriklaymiz!',
+  'toast.checkFailed': 'Mos kelmadi: {label}',
+  'toast.checkFailedGeneric': 'Tekshiruv o‘tmadi',
+  'toast.checkError': 'Tekshirishda xatolik: {message}',
+
+  'runner.harnessFailed': 'harness.js yuklanmadi ({status})',
+  'runner.frozen': 'Sahifa 5 soniyada javob bermadi — kodda cheksiz sikl bo‘lishi mumkin.',
+  'runner.checkTimeout': 'Tekshiruv 10 soniyada yakunlanmadi'
+};
