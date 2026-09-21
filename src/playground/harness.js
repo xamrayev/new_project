@@ -19,6 +19,31 @@
 
   var CFG = window.__PG__ || {};
   var SOURCE = CFG.source || { html: '', css: '', js: '' };
+  var MESSAGES = CFG.messages || {};
+  var PHRASES = CFG.phrases || [];
+
+  /**
+   * Custom checks build their own explanations in the base language. Rather than
+   * duplicating their logic per locale, the locale ships a phrase table and the
+   * produced message is translated fragment by fragment.
+   */
+  function localizePhrases(text) {
+    if (typeof text !== 'string' || !PHRASES.length) return text;
+    var out = text;
+    for (var i = 0; i < PHRASES.length; i++) {
+      out = out.split(PHRASES[i][0]).join(PHRASES[i][1]);
+    }
+    return out;
+  }
+
+  /** Localized message with {placeholders}; see src/i18n/sandbox/. */
+  function msg(key, params) {
+    var template = MESSAGES[key] || key;
+    if (!params) return template;
+    return template.replace(/\{(\w+)\}/g, function (whole, name) {
+      return Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : whole;
+    });
+  }
   var MOCK_API = CFG.mockApi || null;
   var CONSOLE_LOG = [];
   var ALERTS = [];
@@ -72,7 +97,7 @@
   console.table = function (data) { record('log', [data]); };
 
   window.addEventListener('error', function (event) {
-    var text = event.message + (event.lineno ? ' (строка ' + event.lineno + ')' : '');
+    var text = event.message + (event.lineno ? msg('error.line', { line: event.lineno }) : '');
     ERRORS.push(text);
     CONSOLE_LOG.push({ level: 'error', text: text });
     post({ type: 'console', level: 'error', text: text });
@@ -171,10 +196,9 @@
     var mock = matchMock(url);
     if (!mock) {
       if (CFG.allowNetwork && realFetch) return realFetch(input, init);
-      return Promise.reject(new TypeError(
-        'Сеть в песочнице отключена. Доступные адреса: ' +
-        (MOCK_API ? Object.keys(MOCK_API).join(', ') : 'нет')
-      ));
+      return Promise.reject(new TypeError(msg('net.blocked', {
+        list: MOCK_API ? Object.keys(MOCK_API).join(', ') : msg('net.none')
+      })));
     }
     var body = mock.text !== undefined ? mock.text : JSON.stringify(mock.json === undefined ? null : mock.json);
     var status = mock.status || 200;
@@ -219,34 +243,34 @@
     if (spec.equals !== undefined) {
       var a = spec.caseSensitive ? String(actual) : String(actual).toLowerCase();
       var b = spec.caseSensitive ? String(spec.equals) : String(spec.equals).toLowerCase();
-      if (a !== b) return label + ': ожидалось "' + spec.equals + '", получено "' + actual + '"';
+      if (a !== b) return msg('cmp.equals', { label: label, expected: spec.equals, actual: actual });
     }
     if (spec.contains !== undefined) {
       var hay = spec.caseSensitive ? String(actual) : String(actual).toLowerCase();
       var needle = spec.caseSensitive ? String(spec.contains) : String(spec.contains).toLowerCase();
-      if (hay.indexOf(needle) === -1) return label + ': не содержит "' + spec.contains + '" (получено "' + actual + '")';
+      if (hay.indexOf(needle) === -1) return msg('cmp.contains', { label: label, expected: spec.contains, actual: actual });
     }
     if (spec.notContains !== undefined) {
       var hay2 = String(actual).toLowerCase();
       if (hay2.indexOf(String(spec.notContains).toLowerCase()) !== -1) {
-        return label + ': не должно содержать "' + spec.notContains + '"';
+        return msg('cmp.notContains', { label: label, expected: spec.notContains });
       }
     }
     if (spec.matches !== undefined) {
       var re = new RegExp(spec.matches, spec.flags || 'i');
-      if (!re.test(String(actual))) return label + ': не соответствует шаблону /' + spec.matches + '/';
+      if (!re.test(String(actual))) return msg('cmp.matches', { label: label, pattern: spec.matches });
     }
     if (spec.oneOf !== undefined) {
       var list = spec.oneOf.map(function (v) { return String(v).toLowerCase(); });
       if (list.indexOf(String(actual).toLowerCase()) === -1) {
-        return label + ': ожидалось одно из [' + spec.oneOf.join(', ') + '], получено "' + actual + '"';
+        return msg('cmp.oneOf', { label: label, expected: spec.oneOf.join(', '), actual: actual });
       }
     }
     if (spec.min !== undefined && parseFloat(actual) < spec.min) {
-      return label + ': ожидалось не меньше ' + spec.min + ', получено ' + actual;
+      return msg('cmp.min', { label: label, expected: spec.min, actual: actual });
     }
     if (spec.max !== undefined && parseFloat(actual) > spec.max) {
-      return label + ': ожидалось не больше ' + spec.max + ', получено ' + actual;
+      return msg('cmp.max', { label: label, expected: spec.max, actual: actual });
     }
     return null;
   }
@@ -284,8 +308,8 @@
 
   function elementsFor(check) {
     var elements = query(check.selector);
-    if (elements === null) return { error: 'Некорректный селектор ' + describe(check.selector) };
-    if (!elements.length) return { error: 'Не найден элемент по селектору ' + describe(check.selector) };
+    if (elements === null) return { error: msg('sel.invalid', { selector: describe(check.selector) }) };
+    if (!elements.length) return { error: msg('sel.notFound', { selector: describe(check.selector) }) };
     return { elements: elements };
   }
 
@@ -300,7 +324,7 @@
       if (!reason && check.any) return null;
       if (reason) reasons.push(reason);
     }
-    if (check.any) return reasons[0] || 'Ни один элемент ' + describe(check.selector) + ' не подошёл';
+    if (check.any) return reasons[0] || msg('sel.noneMatched', { selector: describe(check.selector) });
     return reasons.length ? reasons[0] : null;
   }
 
@@ -323,47 +347,47 @@
           if (document.querySelector(selector)) return null;
           await sleep(30);
         }
-        return 'Элемент ' + describe(selector) + ' так и не появился';
+        return msg('step.noAppear', { selector: describe(selector) });
       }
       case 'click':
-        if (!element) return 'Нечего нажимать: нет элемента ' + describe(selector);
+        if (!element) return msg('step.noClick', { selector: describe(selector) });
         element.click();
         break;
       case 'type':
-        if (!element) return 'Нет поля ' + describe(selector);
+        if (!element) return msg('step.noField', { selector: describe(selector) });
         element.focus && element.focus();
         element.value = step.value;
         fire(element, 'input');
         fire(element, 'change');
         break;
       case 'check':
-        if (!element) return 'Нет элемента ' + describe(selector);
+        if (!element) return msg('step.noElement', { selector: describe(selector) });
         element.checked = step.value !== false;
         fire(element, 'input');
         fire(element, 'change');
         break;
       case 'select':
-        if (!element) return 'Нет элемента ' + describe(selector);
+        if (!element) return msg('step.noElement', { selector: describe(selector) });
         element.value = step.value;
         fire(element, 'change');
         break;
       case 'submit': {
-        if (!element) return 'Нет формы ' + describe(selector);
+        if (!element) return msg('step.noForm', { selector: describe(selector) });
         var submitEvent = new Event('submit', { bubbles: true, cancelable: true });
         element.dispatchEvent(submitEvent);
         break;
       }
       case 'key':
-        if (!element) return 'Нет элемента ' + describe(selector);
+        if (!element) return msg('step.noElement', { selector: describe(selector) });
         element.dispatchEvent(new KeyboardEvent('keydown', { key: step.key, bubbles: true }));
         element.dispatchEvent(new KeyboardEvent('keyup', { key: step.key, bubbles: true }));
         break;
       case 'event':
-        if (!element) return 'Нет элемента ' + describe(selector);
+        if (!element) return msg('step.noElement', { selector: describe(selector) });
         fire(element, step.type);
         break;
       default:
-        return 'Неизвестный шаг: ' + step.do;
+        return msg('step.unknown', { step: step.do });
     }
     await sleep(step.after === undefined ? 30 : step.after);
     return null;
@@ -378,45 +402,45 @@
       }
       case 'absent': {
         var list = query(check.selector);
-        if (list === null) return 'Некорректный селектор ' + describe(check.selector);
-        return list.length ? 'Элемент ' + describe(check.selector) + ' не должен присутствовать' : null;
+        if (list === null) return msg('sel.invalid', { selector: describe(check.selector) });
+        return list.length ? msg('el.mustNotExist', { selector: describe(check.selector) }) : null;
       }
       case 'count': {
         var all = query(check.selector);
-        if (all === null) return 'Некорректный селектор ' + describe(check.selector);
-        return compare(all.length, check, 'Количество ' + describe(check.selector));
+        if (all === null) return msg('sel.invalid', { selector: describe(check.selector) });
+        return compare(all.length, check, msg('label.count', { selector: describe(check.selector) }));
       }
       case 'text':
         return overElements(check, function (element) {
           var value = check.raw ? element.textContent : normText(element.textContent);
-          return compare(value, check, 'Текст ' + describe(check.selector));
+          return compare(value, check, msg('label.text', { selector: describe(check.selector) }));
         });
       case 'html':
         return overElements(check, function (element) {
-          return compare(normText(element.innerHTML), check, 'Разметка внутри ' + describe(check.selector));
+          return compare(normText(element.innerHTML), check, msg('label.html', { selector: describe(check.selector) }));
         });
       case 'attr':
         return overElements(check, function (element) {
           var value = element.getAttribute(check.name);
-          if (value === null) return 'У элемента ' + describe(check.selector) + ' нет атрибута ' + check.name;
+          if (value === null) return msg('attr.missing', { selector: describe(check.selector), name: check.name });
           if (check.exists && check.equals === undefined && check.contains === undefined && check.matches === undefined) return null;
-          return compare(value, check, 'Атрибут ' + check.name + ' у ' + describe(check.selector));
+          return compare(value, check, msg('label.attr', { name: check.name, selector: describe(check.selector) }));
         });
       case 'noAttr':
         return overElements(check, function (element) {
           return element.hasAttribute(check.name)
-            ? 'У элемента ' + describe(check.selector) + ' не должно быть атрибута ' + check.name
+            ? msg('attr.forbidden', { selector: describe(check.selector), name: check.name })
             : null;
         });
       case 'prop':
         return overElements(check, function (element) {
-          return compare(element[check.name], check, 'Свойство ' + check.name + ' у ' + describe(check.selector));
+          return compare(element[check.name], check, msg('label.prop', { name: check.name, selector: describe(check.selector) }));
         });
       case 'style':
         return overElements(check, function (element) {
           var computed = getComputedStyle(element, check.pseudo || null);
           var raw = computed.getPropertyValue(check.prop).trim();
-          var label = 'CSS ' + check.prop + ' у ' + describe(check.selector);
+          var label = msg('label.style', { prop: check.prop, selector: describe(check.selector) });
           var actual = (check.min !== undefined || check.max !== undefined) ? parseFloat(raw) : raw;
 
           var direct = compare(actual, check, label);
@@ -439,44 +463,44 @@
           if (check.selectorContains) return normalizeSelector(rule.selector).indexOf(normalizeSelector(check.selectorContains)) !== -1;
           return normalizeSelector(rule.selector) === normalizeSelector(check.selector);
         });
-        var where = check.media ? ' внутри @media (' + check.media + ')' : '';
-        if (!rules.length) return 'Не найдено правило для ' + describe(check.selector || check.selectorContains) + where;
+        var where = check.media ? msg('where.media', { media: check.media }) : '';
+        if (!rules.length) return msg('rule.notFound', { selector: describe(check.selector || check.selectorContains), where: where });
         if (!check.prop) return null;
         var lastReason = null;
         for (var r = 0; r < rules.length; r++) {
           var declared = rules[r].style.getPropertyValue(check.prop);
           if (!declared) continue;
-          lastReason = compare(declared.trim(), check, 'Свойство ' + check.prop + where);
+          lastReason = compare(declared.trim(), check, msg('label.cssRule', { prop: check.prop, where: where }));
           if (!lastReason) return null;
         }
-        return lastReason || 'В правиле ' + describe(check.selector || check.selectorContains) + where + ' нет свойства ' + check.prop;
+        return lastReason || msg('rule.noProp', { selector: describe(check.selector || check.selectorContains), where: where, prop: check.prop });
       }
       case 'source': {
         var text = SOURCE[check.lang || 'html'] || '';
-        return compare(text, check, 'Код (' + (check.lang || 'html') + ')');
+        return compare(text, check, msg('label.source', { lang: check.lang || 'html' }));
       }
       case 'console': {
         var joined = CONSOLE_LOG.map(function (entry) { return entry.text; }).join('\n');
         if (!CONSOLE_LOG.length && (check.contains !== undefined || check.matches !== undefined)) {
-          return 'Консоль пуста — ожидался вывод через console.log()';
+          return msg('console.empty');
         }
-        return compare(joined, check, 'Вывод в консоль');
+        return compare(joined, check, msg('label.console'));
       }
       case 'alert': {
-        if (!ALERTS.length) return 'Не было вызова alert() / prompt() / confirm()';
+        if (!ALERTS.length) return msg('alert.none');
         var joinedAlerts = ALERTS.join('\n');
-        return compare(joinedAlerts, check, 'Текст alert()');
+        return compare(joinedAlerts, check, msg('label.alert'));
       }
       case 'noError':
-        return ERRORS.length ? 'В консоли есть ошибка: ' + ERRORS[0] : null;
+        return ERRORS.length ? msg('error.inConsole', { message: ERRORS[0] }) : null;
       case 'storage': {
         var snapshot = storageSnapshot();
         var value = snapshot[check.key];
         if (value === undefined || value === null) {
-          return 'В localStorage нет ключа "' + check.key + '"';
+          return msg('storage.missing', { key: check.key });
         }
         if (check.equals === undefined && check.contains === undefined && check.matches === undefined) return null;
-        return compare(value, check, 'localStorage["' + check.key + '"]');
+        return compare(value, check, msg('label.storage', { key: check.key }));
       }
       case 'interact': {
         var steps = check.steps || [];
@@ -509,12 +533,12 @@
         var fn = new AsyncFunction('ctx', check.fn);
         var outcome = await fn(ctx);
         if (outcome === true || outcome === undefined || outcome === null) return null;
-        if (outcome === false) return check.fail || 'Проверка не пройдена';
-        if (typeof outcome === 'string') return outcome;
-        return outcome.ok ? null : (outcome.message || check.fail || 'Проверка не пройдена');
+        if (outcome === false) return localizePhrases(check.fail) || msg('check.failed');
+        if (typeof outcome === 'string') return localizePhrases(outcome);
+        return outcome.ok ? null : (localizePhrases(outcome.message) || localizePhrases(check.fail) || msg('check.failed'));
       }
       default:
-        return 'Неизвестный тип проверки: ' + check.kind;
+        return msg('check.unknown', { kind: check.kind });
     }
   }
 
@@ -537,7 +561,7 @@
       try {
         reason = await withRetry(check);
       } catch (error) {
-        reason = 'Ошибка при проверке: ' + (error && error.message ? error.message : String(error));
+        reason = msg('check.error', { message: error && error.message ? error.message : String(error) });
       }
       results.push({ label: check.label, ok: !reason, message: reason || '' });
     }

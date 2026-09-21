@@ -6,6 +6,7 @@
  */
 import { CodeEditor } from './editor.js';
 import { SandboxRunner } from './runner.js';
+import { t } from '../i18n/index.js';
 
 const LANGUAGES = [
   { id: 'html', label: 'HTML' },
@@ -65,10 +66,10 @@ export class Playground {
     const actions = document.createElement('div');
     actions.className = 'pg__actions';
 
-    this.runButton = button('▶ Запустить', 'btn btn--sm btn--primary', () => this.run({ force: true }));
-    this.checkButton = button('✓ Проверить', 'btn btn--sm btn--ok', () => this.onRequestCheck());
-    this.resetButton = button('↻ Сброс', 'btn btn--sm', () => this.onReset());
-    this.consoleButton = button('Консоль', 'btn btn--sm btn--ghost', () => this.toggleConsole());
+    this.runButton = button(t('pg.run'), 'btn btn--sm btn--primary', () => this.run({ force: true }));
+    this.checkButton = button(t('dock.check'), 'btn btn--sm btn--ok', () => this.onRequestCheck());
+    this.resetButton = button(t('pg.reset'), 'btn btn--sm', () => this.onReset());
+    this.consoleButton = button(t('pg.console'), 'btn btn--sm btn--ghost', () => this.toggleConsole());
     actions.append(this.runButton, this.checkButton, this.resetButton, this.consoleButton);
 
     bar.append(this.tabs, actions);
@@ -84,12 +85,12 @@ export class Playground {
     const label = document.createElement('div');
     label.className = 'preview__label';
     this.previewStatus = document.createElement('span');
-    this.previewStatus.textContent = 'Live preview';
+    this.previewStatus.textContent = t('pg.preview');
     label.append(this.previewStatus);
 
     this.frame = document.createElement('iframe');
     this.frame.className = 'preview__frame';
-    this.frame.title = 'Результат выполнения кода';
+    this.frame.title = t('pg.previewFrame');
     this.frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals allow-popups');
 
     this.consolePanel = document.createElement('div');
@@ -98,8 +99,8 @@ export class Playground {
     const consoleHead = document.createElement('div');
     consoleHead.className = 'console__head';
     const consoleTitle = document.createElement('span');
-    consoleTitle.textContent = 'Console';
-    const clear = button('очистить', 'btn btn--sm btn--ghost', () => this.clearConsole());
+    consoleTitle.textContent = t('pg.consoleTitle');
+    const clear = button(t('pg.consoleClear'), 'btn btn--sm btn--ghost', () => this.clearConsole());
     clear.style.marginLeft = 'auto';
     consoleHead.append(consoleTitle, clear);
     this.consoleBody = document.createElement('div');
@@ -185,12 +186,12 @@ export class Playground {
     if (this.busy && !force) return;
     this.source[this.active] = this.editor.value;
     this.busy = true;
-    this.previewStatus.textContent = 'Выполняется…';
+    this.previewStatus.textContent = t('pg.running');
     this.clearConsole({ keepPanel: true });
     try {
       this.runner.setConfig({ ...this.sandbox, storageSeed: this.liveStorage });
       await this.runner.render(this.source);
-      this.previewStatus.textContent = 'Live preview';
+      this.previewStatus.textContent = t('pg.preview');
       this.onRun(this.getSource());
     } finally {
       this.busy = false;
@@ -201,14 +202,14 @@ export class Playground {
   async check(checks) {
     this.source[this.active] = this.editor.value;
     this.clearConsole({ keepPanel: true });
-    this.previewStatus.textContent = 'Проверка…';
+    this.previewStatus.textContent = t('pg.checking');
     try {
       // Grading always starts from the lesson's declared storage, never from
       // whatever the student left behind while experimenting.
       this.runner.setConfig({ ...this.sandbox, storageSeed: { ...(this.sandbox.storageSeed || {}) } });
       return await this.runner.check(this.source, checks);
     } finally {
-      this.previewStatus.textContent = 'Live preview';
+      this.previewStatus.textContent = t('pg.preview');
     }
   }
 

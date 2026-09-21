@@ -4,6 +4,8 @@
  * everything a beginner needs and nothing that gets in the way.
  */
 
+import { t } from '../i18n/index.js';
+
 const PAIRS = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
 const INDENT = '  ';
 
@@ -32,14 +34,14 @@ export class CodeEditor {
     this.area.autocapitalize = 'off';
     this.area.autocomplete = 'off';
     this.area.setAttribute('autocorrect', 'off');
-    this.area.setAttribute('aria-label', 'Редактор кода');
+    this.area.setAttribute('aria-label', t('editor.label'));
 
     this.hintbar = document.createElement('div');
     this.hintbar.className = 'editor__hintbar';
     this.position = document.createElement('span');
-    this.position.textContent = 'строка 1, столбец 1';
+    this.position.textContent = t('editor.position', { line: 1, column: 1 });
     const tip = document.createElement('span');
-    tip.textContent = 'Ctrl/Cmd + Enter — запустить';
+    tip.textContent = t('editor.runHint');
     this.hintbar.append(this.position, tip);
 
     this.pane.append(this.gutter, this.area);
@@ -70,11 +72,9 @@ export class CodeEditor {
 
   setLanguage(language) {
     this.area.dataset.language = language;
-    this.area.placeholder = {
-      html: '<!-- ваш HTML -->',
-      css: '/* ваш CSS */',
-      js: '// ваш JavaScript'
-    }[language] || '';
+    this.area.placeholder = ['html', 'css', 'js'].includes(language)
+      ? t(`editor.placeholder.${language}`)
+      : '';
   }
 
   focus() { this.area.focus(); }
@@ -91,7 +91,10 @@ export class CodeEditor {
   #updatePosition() {
     const upToCaret = this.area.value.slice(0, this.area.selectionStart);
     const lines = upToCaret.split('\n');
-    this.position.textContent = `строка ${lines.length}, столбец ${lines[lines.length - 1].length + 1}`;
+    this.position.textContent = t('editor.position', {
+      line: lines.length,
+      column: lines[lines.length - 1].length + 1
+    });
   }
 
   #replaceSelection(text, caretOffset) {

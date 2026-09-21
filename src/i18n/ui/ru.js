@@ -1,0 +1,71 @@
+/* Интерфейс — русский (базовая локаль: все остальные сверяются с этим файлом). */
+export const ru = {
+  'app.title': 'Web Development',
+  'app.boot': 'Загрузка курса…',
+  'app.bootFailed': 'Не удалось запустить курс',
+  'app.bootHint': 'Проект нужно открывать через локальный сервер, а не двойным кликом по файлу:',
+
+  'top.courseMap': 'Программа курса',
+  'top.previousLesson': 'Предыдущий урок',
+  'top.nextLesson': 'Следующий урок',
+  'top.toggleTheme': 'Сменить тему',
+  'top.language': 'Язык интерфейса',
+  'top.lesson': 'Урок {number}. {title}',
+
+  'sidebar.close': 'Закрыть',
+  'sidebar.resetProgress': 'Сбросить прогресс',
+  'sidebar.summary': '{lessons}/{lessonsTotal} уроков · {tasks}/{tasksTotal} задач',
+
+  'dock.title': 'Задачи',
+  'dock.task': 'Задача {number}. {title}',
+  'dock.solved': '✓ решена',
+  'dock.check': '✓ Проверить',
+  'dock.checking': 'Проверяю…',
+  'dock.hint': '💡 Подсказка ({shown}/{total})',
+  'dock.hintsShown': 'Подсказки показаны',
+  'dock.restart': '↻ Начать заново',
+  'dock.showSolution': 'Показать решение',
+  'dock.next': 'Дальше →',
+  'dock.allPassed': '✓ Задача решена!',
+  'dock.somePassed': 'Пройдено {passed} из {total} проверок — посмотрите, что не сошлось.',
+
+  'difficulty.easy': 'лёгкая',
+  'difficulty.medium': 'средняя',
+  'difficulty.hard': 'сложная',
+
+  'pg.run': '▶ Запустить',
+  'pg.reset': '↻ Сброс',
+  'pg.console': 'Консоль',
+  'pg.consoleTitle': 'Console',
+  'pg.consoleClear': 'очистить',
+  'pg.preview': 'Live preview',
+  'pg.previewFrame': 'Результат выполнения кода',
+  'pg.running': 'Выполняется…',
+  'pg.checking': 'Проверка…',
+
+  'editor.label': 'Редактор кода',
+  'editor.position': 'строка {line}, столбец {column}',
+  'editor.runHint': 'Ctrl/Cmd + Enter — запустить',
+  'editor.placeholder.html': '<!-- ваш HTML -->',
+  'editor.placeholder.css': '/* ваш CSS */',
+  'editor.placeholder.js': '// ваш JavaScript',
+
+  'confirm.resetTask': 'Вернуть исходный код задачи? Ваши изменения будут потеряны.',
+  'confirm.showSolution': 'Показать готовое решение? Попробуйте сначала подсказки.',
+  'confirm.resetProgress': 'Удалить весь прогресс и сохранённый код? Действие необратимо.',
+
+  'toast.taskReset': 'Код задачи сброшен',
+  'toast.solutionLoaded': 'Решение загружено в редактор — разберите его и запустите',
+  'toast.progressReset': 'Прогресс сброшен',
+  'toast.taskDone': 'Задача засчитана!',
+  'toast.lessonDone': 'Урок пройден полностью: {done}/{total} 🎉',
+  'toast.nextLesson': 'Урок {number} пройден. Дальше: {title}',
+  'toast.courseDone': 'Это была последняя задача курса. Поздравляем!',
+  'toast.checkFailed': 'Не сошлось: {label}',
+  'toast.checkFailedGeneric': 'Проверка не пройдена',
+  'toast.checkError': 'Ошибка проверки: {message}',
+
+  'runner.harnessFailed': 'Не удалось загрузить harness.js ({status})',
+  'runner.frozen': 'Страница не ответила за 5 секунд — возможно, в коде бесконечный цикл.',
+  'runner.checkTimeout': 'Проверка не завершилась за 10 секунд'
+};

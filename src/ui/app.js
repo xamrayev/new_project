@@ -1,9 +1,14 @@
 /*
  * Application shell: wires the course data, the playground and the progress
  * store together, and keeps the URL hash in sync with the current task.
+ *
+ * Switching the language rebuilds the course for the new locale and re-mounts
+ * the whole shell — progress, drafts and the current task are keyed by id, so
+ * nothing is lost in the swap.
  */
-import { LESSONS, TOTAL_LESSONS, getLesson, getTask, neighbours } from '../course/index.js';
+import { buildCourse } from '../course/index.js';
 import { Playground } from '../playground/playground.js';
+import { LOCALES, getLocale, setLocale, t } from '../i18n/index.js';
 import { renderBlocks } from './markup.js';
 import { Sidebar } from './sidebar.js';
 import { TasksDock } from './tasks-dock.js';
@@ -12,12 +17,15 @@ import { toast } from './toast.js';
 export class App {
   constructor(progress) {
     this.progress = progress;
+    this.course = buildCourse(getLocale());
     this.lesson = null;
     this.task = null;
     this.checking = false;
+    this.onHashChange = () => this.#fromHash();
   }
 
   mount(root) {
+    this.root = root;
     root.textContent = '';
     root.className = 'app';
 
@@ -47,6 +55,7 @@ export class App {
     });
 
     this.sidebar = new Sidebar({
+      course: this.course,
       progress: this.progress,
       onOpenLesson: (lessonId) => this.openLesson(lessonId),
       onReset: () => this.resetProgress()
@@ -55,8 +64,16 @@ export class App {
     root.append(this.top, this.main, this.dock.root);
     document.body.append(this.sidebar.scrim, this.sidebar.root);
 
-    window.addEventListener('hashchange', () => this.#fromHash());
+    window.addEventListener('hashchange', this.onHashChange);
     this.#fromHash();
+  }
+
+  /** Tears the shell down so it can be rebuilt in another language. */
+  unmount() {
+    window.removeEventListener('hashchange', this.onHashChange);
+    this.sidebar.scrim.remove();
+    this.sidebar.root.remove();
+    this.root.textContent = '';
   }
 
   /* --------------------------------------------------------------- top bar */
@@ -69,7 +86,7 @@ export class App {
     burger.className = 'top__burger';
     burger.type = 'button';
     burger.textContent = '☰';
-    burger.setAttribute('aria-label', 'Программа курса');
+    burger.setAttribute('aria-label', t('top.courseMap'));
     burger.addEventListener('click', () => this.sidebar.toggle());
 
     const titleBox = document.createElement('div');
@@ -88,10 +105,10 @@ export class App {
 
     const nav = document.createElement('div');
     nav.className = 'top__nav';
-    this.previousButton = this.#navButton('←', 'Предыдущий урок', () => this.goToNeighbour('previous'));
-    this.nextButton = this.#navButton('→', 'Следующий урок', () => this.goToNeighbour('next'));
-    const theme = this.#navButton('◐', 'Сменить тему', () => this.toggleTheme());
-    nav.append(this.previousButton, this.nextButton, theme);
+    this.previousButton = this.#navButton('←', t('top.previousLesson'), () => this.goToNeighbour('previous'));
+    this.nextButton = this.#navButton('→', t('top.nextLesson'), () => this.goToNeighbour('next'));
+    const theme = this.#navButton('◐', t('top.toggleTheme'), () => this.toggleTheme());
+    nav.append(this.#languagePicker(), this.previousButton, this.nextButton, theme);
 
     this.top.append(burger, titleBox, spacer, this.counter, nav);
   }
@@ -107,6 +124,40 @@ export class App {
     return element;
   }
 
+  #languagePicker() {
+    const select = document.createElement('select');
+    select.className = 'btn btn--sm lang';
+    select.title = t('top.language');
+    select.setAttribute('aria-label', t('top.language'));
+
+    LOCALES.forEach((locale) => {
+      const option = document.createElement('option');
+      option.value = locale.id;
+      option.textContent = locale.short;
+      option.title = locale.label;
+      if (locale.id === getLocale()) option.selected = true;
+      select.append(option);
+    });
+
+    select.addEventListener('change', () => this.changeLocale(select.value));
+    return select;
+  }
+
+  changeLocale(locale) {
+    if (locale === getLocale()) return;
+    setLocale(locale);
+    this.progress.setLocale(locale);
+
+    const position = { lessonId: this.lesson.id, taskPosition: this.task.position };
+    this.course = buildCourse(locale);
+    this.unmount();
+    this.mount(this.root);
+
+    const lesson = this.course.getLesson(position.lessonId);
+    const task = lesson && lesson.tasks.find((entry) => entry.position === position.taskPosition);
+    if (lesson && task) this.openTask(lesson, task);
+  }
+
   toggleTheme() {
     const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = next;
@@ -117,7 +168,7 @@ export class App {
 
   #fromHash() {
     const [, lessonId, taskPosition] = (location.hash || '').replace(/^#\/?/, '/').split('/');
-    const lesson = getLesson(lessonId) || this.#lastVisitedLesson();
+    const lesson = this.course.getLesson(lessonId) || this.#lastVisitedLesson();
     const task =
       lesson.tasks.find((entry) => String(entry.position) === taskPosition) ||
       this.#firstUnsolved(lesson);
@@ -126,7 +177,7 @@ export class App {
 
   #lastVisitedLesson() {
     const last = this.progress.last;
-    return (last && getLesson(last.lessonId)) || LESSONS[0];
+    return (last && this.course.getLesson(last.lessonId)) || this.course.lessons[0];
   }
 
   #firstUnsolved(lesson) {
@@ -134,7 +185,7 @@ export class App {
   }
 
   openLesson(lessonId) {
-    const lesson = getLesson(lessonId);
+    const lesson = this.course.getLesson(lessonId);
     if (!lesson) return;
     this.openTask(lesson, this.#firstUnsolved(lesson));
   }
@@ -151,11 +202,11 @@ export class App {
 
     this.progress.setLast(lesson.id, task.id);
 
-    this.lessonTitle.textContent = `Урок ${lesson.number}. ${lesson.title}`;
+    this.lessonTitle.textContent = t('top.lesson', { number: lesson.number, title: lesson.title });
     this.moduleTitle.textContent = `${lesson.moduleTitle} · ${lesson.summary}`;
-    this.counter.textContent = `${String(lesson.number).padStart(2, '0')}/${TOTAL_LESSONS}`;
+    this.counter.textContent = `${String(lesson.number).padStart(2, '0')}/${this.course.totalLessons}`;
 
-    const around = neighbours(lesson);
+    const around = this.course.neighbours(lesson);
     this.previousButton.disabled = !around.previous;
     this.nextButton.disabled = !around.next;
 
@@ -171,7 +222,7 @@ export class App {
   }
 
   goToNeighbour(direction) {
-    const target = neighbours(this.lesson)[direction];
+    const target = this.course.neighbours(this.lesson)[direction];
     if (target) this.openLesson(target.id);
   }
 
@@ -186,12 +237,13 @@ export class App {
       return;
     }
 
-    const around = neighbours(this.lesson);
+    const around = this.course.neighbours(this.lesson);
     if (around.next) {
+      const finished = this.lesson.number;
       this.openLesson(around.next.id);
-      toast(`Урок ${this.lesson.number} пройден. Дальше: ${around.next.title}`, 'ok');
+      toast(t('toast.nextLesson', { number: finished, title: around.next.title }), 'ok');
     } else {
-      toast('Это была последняя задача курса. Поздравляем!', 'ok', 5000);
+      toast(t('toast.courseDone'), 'ok', 5000);
     }
   }
 
@@ -212,14 +264,14 @@ export class App {
         this.sidebar.render(this.lesson.id);
         this.dock.render();
         const stats = this.progress.lessonStats(this.lesson);
-        if (isNew && stats.complete) toast(`Урок пройден полностью: ${stats.done}/${stats.total} 🎉`, 'ok', 4000);
-        else if (isNew) toast('Задача засчитана!', 'ok');
+        if (isNew && stats.complete) toast(t('toast.lessonDone', { done: stats.done, total: stats.total }), 'ok', 4000);
+        else if (isNew) toast(t('toast.taskDone'), 'ok');
       } else {
         const failed = results.find((result) => !result.ok);
-        toast(failed ? `Не сошлось: ${failed.label}` : 'Проверка не пройдена', 'err');
+        toast(failed ? t('toast.checkFailed', { label: failed.label }) : t('toast.checkFailedGeneric'), 'err');
       }
     } catch (error) {
-      toast(`Ошибка проверки: ${error.message}`, 'err', 4000);
+      toast(t('toast.checkError', { message: error.message }), 'err', 4000);
     } finally {
       this.checking = false;
       this.dock.setBusy(false);
@@ -229,26 +281,26 @@ export class App {
   /* ----------------------------------------------------------- task actions */
 
   resetTask() {
-    if (!window.confirm('Вернуть исходный код задачи? Ваши изменения будут потеряны.')) return;
+    if (!window.confirm(t('confirm.resetTask'))) return;
     this.progress.clearDraft(this.lesson.id, this.task.id);
     this.playground.configure({ editors: this.lesson.editors, sandbox: this.task.sandbox });
     this.playground.setSource(this.task.starter);
     this.dock.setResults(null);
-    toast('Код задачи сброшен', 'info');
+    toast(t('toast.taskReset'), 'info');
   }
 
   showSolution() {
-    if (!window.confirm('Показать готовое решение? Попробуйте сначала подсказки.')) return;
+    if (!window.confirm(t('confirm.showSolution'))) return;
     this.playground.setSource(this.task.solution);
-    toast('Решение загружено в редактор — разберите его и запустите', 'info', 4000);
+    toast(t('toast.solutionLoaded'), 'info', 4000);
   }
 
   resetProgress() {
-    if (!window.confirm('Удалить весь прогресс и сохранённый код? Действие необратимо.')) return;
+    if (!window.confirm(t('confirm.resetProgress'))) return;
     this.progress.resetAll();
     this.sidebar.render(this.lesson.id);
     this.dock.render();
-    toast('Прогресс сброшен', 'info');
+    toast(t('toast.progressReset'), 'info');
   }
 
   #saveDraft(source) {

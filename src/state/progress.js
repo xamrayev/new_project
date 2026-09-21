@@ -8,12 +8,13 @@
  *   tasks:  { "<lessonId>": { "<taskId>": true } },
  *   drafts: { "<lessonId>:<taskId>": { html, css, js } },
  *   last:   { lessonId, taskId },
- *   theme:  "dark" | "light"
+ *   theme:  "dark" | "light",
+ *   locale: "ru" | "uz"
  * }
  */
 
 const KEY = 'webdev-course:v1';
-const EMPTY = { version: 1, tasks: {}, drafts: {}, last: null, theme: 'dark' };
+const EMPTY = { version: 1, tasks: {}, drafts: {}, last: null, theme: 'dark', locale: null };
 
 function read() {
   try {
@@ -126,6 +127,15 @@ export class Progress {
   setTheme(theme) {
     this.state.theme = theme;
     this.#commit();
+  }
+
+  /* ----------------------------------------------------------------- locale */
+
+  get locale() { return this.state.locale; }
+
+  setLocale(locale) {
+    this.state.locale = locale;
+    write(this.state);
   }
 
   /* ------------------------------------------------------------------ admin */

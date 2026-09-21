@@ -3,12 +3,7 @@
  * selected one (description, hints, check results, solution).
  */
 import { inline } from './markup.js';
-
-const DIFFICULTY = {
-  easy: { label: 'лёгкая', className: 'easy' },
-  medium: { label: 'средняя', className: 'medium' },
-  hard: { label: 'сложная', className: 'hard' }
-};
+import { t } from '../i18n/index.js';
 
 export class TasksDock {
   constructor({ progress, onSelectTask, onCheck, onReset, onShowSolution, onNext }) {
@@ -30,7 +25,7 @@ export class TasksDock {
     head.className = 'tasks__head';
     const title = document.createElement('span');
     title.className = 'tasks__title';
-    title.textContent = 'Задачи';
+    title.textContent = t('dock.title');
     this.progressLabel = document.createElement('span');
     this.progressLabel.className = 'tasks__progress';
     head.append(title, this.progressLabel);
@@ -62,7 +57,7 @@ export class TasksDock {
     this.busy = busy;
     if (this.checkButton) {
       this.checkButton.disabled = busy;
-      this.checkButton.textContent = busy ? 'Проверяю…' : '✓ Проверить';
+      this.checkButton.textContent = busy ? t('dock.checking') : t('dock.check');
     }
   }
 
@@ -85,7 +80,7 @@ export class TasksDock {
       mark.textContent = done ? '✓' : '○';
 
       const dot = document.createElement('span');
-      dot.className = `task-chip__dif dif--${DIFFICULTY[task.difficulty].className}`;
+      dot.className = `task-chip__dif dif--${task.difficulty}`;
 
       const label = document.createElement('span');
       label.textContent = `${task.position}. ${task.title}`;
@@ -107,17 +102,17 @@ export class TasksDock {
     top.className = 'task-panel__top';
 
     const heading = document.createElement('h4');
-    heading.textContent = `Задача ${task.position}. ${task.title}`;
+    heading.textContent = t('dock.task', { number: task.position, title: task.title });
 
     const difficulty = document.createElement('span');
-    difficulty.className = `badge badge--${DIFFICULTY[task.difficulty].className}`;
-    difficulty.textContent = DIFFICULTY[task.difficulty].label;
+    difficulty.className = `badge badge--${task.difficulty}`;
+    difficulty.textContent = t(`difficulty.${task.difficulty}`);
     top.append(heading, difficulty);
 
     if (done) {
       const badge = document.createElement('span');
       badge.className = 'badge badge--done';
-      badge.textContent = '✓ решена';
+      badge.textContent = t('dock.solved');
       top.append(badge);
     }
 
@@ -128,12 +123,14 @@ export class TasksDock {
     const tools = document.createElement('div');
     tools.className = 'task-panel__tools';
 
-    this.checkButton = button('✓ Проверить', 'btn btn--sm btn--ok', () => this.onCheck());
+    this.checkButton = button(t('dock.check'), 'btn btn--sm btn--ok', () => this.onCheck());
     tools.append(this.checkButton);
 
     if (task.hints.length) {
       const hintButton = button(
-        this.revealedHints >= task.hints.length ? 'Подсказки показаны' : `💡 Подсказка (${this.revealedHints}/${task.hints.length})`,
+        this.revealedHints >= task.hints.length
+          ? t('dock.hintsShown')
+          : t('dock.hint', { shown: this.revealedHints, total: task.hints.length }),
         'btn btn--sm',
         () => {
           this.revealedHints = Math.min(this.revealedHints + 1, task.hints.length);
@@ -144,8 +141,8 @@ export class TasksDock {
       tools.append(hintButton);
     }
 
-    tools.append(button('↻ Начать заново', 'btn btn--sm btn--ghost', () => this.onReset()));
-    tools.append(button('Показать решение', 'btn btn--sm btn--ghost', () => this.onShowSolution()));
+    tools.append(button(t('dock.restart'), 'btn btn--sm btn--ghost', () => this.onReset()));
+    tools.append(button(t('dock.showSolution'), 'btn btn--sm btn--ghost', () => this.onShowSolution()));
 
     this.panel.append(top, description, tools);
 
@@ -191,15 +188,15 @@ export class TasksDock {
       const allPassed = passed === this.results.length;
       banner.className = allPassed ? 'banner banner--ok' : 'banner banner--fail';
       banner.textContent = allPassed
-        ? '✓ Задача решена!'
-        : `Пройдено ${passed} из ${this.results.length} проверок — посмотрите, что не сошлось.`;
+        ? t('dock.allPassed')
+        : t('dock.somePassed', { passed, total: this.results.length });
 
       this.panel.append(list, banner);
 
       if (allPassed) {
         const next = document.createElement('div');
         next.className = 'task-panel__tools';
-        next.append(button('Дальше →', 'btn btn--sm btn--primary', () => this.onNext()));
+        next.append(button(t('dock.next'), 'btn btn--sm btn--primary', () => this.onNext()));
         this.panel.append(next);
       }
     }

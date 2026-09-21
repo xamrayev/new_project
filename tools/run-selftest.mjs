@@ -6,6 +6,7 @@
  *
  * Usage:
  *   node tools/run-selftest.mjs                 # whole course
+ *   node tools/run-selftest.mjs --locale=uz     # one locale
  *   node tools/run-selftest.mjs --lesson=js-dom # one lesson
  *   node tools/run-selftest.mjs --from=10 --to=18
  */
@@ -32,7 +33,7 @@ function findChromium() {
 function queryFromArgs() {
   const query = new URLSearchParams();
   for (const argument of process.argv.slice(2)) {
-    const match = argument.match(/^--(lesson|from|to)=(.+)$/);
+    const match = argument.match(/^--(locale|lesson|from|to|starters)=(.+)$/);
     if (match) query.set(match[1], match[2]);
   }
   const text = query.toString();
@@ -85,7 +86,7 @@ try {
   const result = await page.evaluate(() => window.__SELFTEST__);
 
   if (result.ok) {
-    console.log(`\n✓ ${result.passedTasks}/${result.totalTasks} задач проходят собственные проверки (${result.checked} проверок, ${result.seconds} c)`);
+    console.log(`\n✓ ${result.passedTasks}/${result.totalTasks} задач проходят собственные проверки — локали: ${(result.locales || []).join(', ')} (${result.checked} проверок, ${result.seconds} c)`);
   } else {
     console.error(`\n✕ Непройденных проверок: ${result.failures.length} (${result.passedTasks}/${result.totalTasks} задач в порядке)\n`);
     result.failures.forEach((failure) => console.error(`  - ${failure}`));

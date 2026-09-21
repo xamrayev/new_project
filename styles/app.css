@@ -541,3 +541,12 @@ a { color: var(--accent); }
   .top { flex-wrap: wrap; }
   .top__counter { order: 3; }
 }
+
+/* Language picker in the top bar */
+.lang {
+  padding-right: 6px;
+  cursor: pointer;
+  appearance: none;
+  text-align: center;
+}
+.lang:hover { border-color: var(--accent); }

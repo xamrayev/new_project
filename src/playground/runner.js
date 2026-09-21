@@ -3,6 +3,8 @@
  * and speaks the postMessage protocol implemented by harness.js.
  */
 
+import { sandboxMessages, sandboxPhrases, getLocale, t } from '../i18n/index.js';
+
 const HARNESS_URL = new URL('./harness.js', import.meta.url);
 let harnessPromise = null;
 
@@ -11,7 +13,7 @@ export function loadHarness() {
   if (!harnessPromise) {
     harnessPromise = fetch(HARNESS_URL)
       .then((response) => {
-        if (!response.ok) throw new Error(`Не удалось загрузить harness.js (${response.status})`);
+        if (!response.ok) throw new Error(t('runner.harnessFailed', { status: response.status }));
         return response.text();
       })
       .catch((error) => {
@@ -183,7 +185,10 @@ export class SandboxRunner {
       storageSeed: this.config.storageSeed || {},
       promptAnswers: this.config.promptAnswers || [],
       allowNetwork: Boolean(this.config.allowNetwork),
-      modules: this.config.modules || null
+      modules: this.config.modules || null,
+      locale: getLocale(),
+      messages: sandboxMessages(),
+      phrases: sandboxPhrases()
     };
 
     // A fresh frame guarantees checks never observe state left over from a
@@ -200,10 +205,7 @@ export class SandboxRunner {
       setTimeout(() => {
         if (this.pendingReady && this.pendingReady.resolve === resolve) {
           this.pendingReady = null;
-          this.#emit('console', {
-            level: 'warn',
-            text: 'Страница не ответила за 5 секунд — возможно, в коде бесконечный цикл.'
-          });
+          this.#emit('console', { level: 'warn', text: t('runner.frozen') });
           resolve();
         }
       }, 5000);
@@ -223,7 +225,7 @@ export class SandboxRunner {
         resolve(checks.map((check) => ({
           label: check.label,
           ok: false,
-          message: 'Проверка не завершилась за 10 секунд'
+          message: t('runner.checkTimeout')
         })));
       }, 10000);
       this.pendingChecks.set(runId, { resolve, timer });

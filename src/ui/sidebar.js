@@ -1,10 +1,11 @@
 /*
  * Course map: modules, per-module progress bars and the full lesson list.
  */
-import { MODULES, TOTAL_LESSONS, TOTAL_TASKS } from '../course/index.js';
+import { t } from '../i18n/index.js';
 
 export class Sidebar {
-  constructor({ progress, onOpenLesson, onReset }) {
+  constructor({ course, progress, onOpenLesson, onReset }) {
+    this.course = course;
     this.progress = progress;
     this.onOpenLesson = onOpenLesson;
     this.onReset = onReset;
@@ -18,19 +19,19 @@ export class Sidebar {
     this.root = document.createElement('aside');
     this.root.className = 'sidebar';
     this.root.hidden = true;
-    this.root.setAttribute('aria-label', 'Программа курса');
+    this.root.setAttribute('aria-label', t('top.courseMap'));
 
     const head = document.createElement('div');
     head.className = 'sidebar__head';
     const title = document.createElement('h2');
-    title.textContent = 'Web Development';
+    title.textContent = t('app.title');
     this.summary = document.createElement('span');
     this.summary.className = 'mod__stat';
     const close = document.createElement('button');
     close.className = 'btn btn--sm btn--ghost';
     close.type = 'button';
     close.textContent = '✕';
-    close.setAttribute('aria-label', 'Закрыть');
+    close.setAttribute('aria-label', t('sidebar.close'));
     close.addEventListener('click', () => this.close());
     head.append(title, this.summary, close);
 
@@ -42,7 +43,7 @@ export class Sidebar {
     const resetButton = document.createElement('button');
     resetButton.className = 'btn btn--sm';
     resetButton.type = 'button';
-    resetButton.textContent = 'Сбросить прогресс';
+    resetButton.textContent = t('sidebar.resetProgress');
     resetButton.addEventListener('click', () => this.onReset());
     foot.append(resetButton);
 
@@ -75,7 +76,7 @@ export class Sidebar {
     this.currentLessonId = currentLessonId;
     if (this.root.hidden) return;
 
-    const totals = MODULES.reduce(
+    const totals = this.course.modules.reduce(
       (acc, module) => {
         const stats = this.progress.moduleStats(module.lessons);
         acc.tasks += stats.tasksDone;
@@ -84,10 +85,15 @@ export class Sidebar {
       },
       { tasks: 0, lessons: 0 }
     );
-    this.summary.textContent = `${totals.lessons}/${TOTAL_LESSONS} уроков · ${totals.tasks}/${TOTAL_TASKS} задач`;
+    this.summary.textContent = t('sidebar.summary', {
+      lessons: totals.lessons,
+      lessonsTotal: this.course.totalLessons,
+      tasks: totals.tasks,
+      tasksTotal: this.course.totalTasks
+    });
 
     this.body.textContent = '';
-    MODULES.forEach((module) => {
+    this.course.modules.forEach((module) => {
       const stats = this.progress.moduleStats(module.lessons);
       const block = document.createElement('section');
       block.className = 'mod';
@@ -131,7 +137,7 @@ export class Sidebar {
 
         const counter = document.createElement('span');
         counter.className = 'lesson-item__tasks';
-        counter.textContent = stats.complete ? '✓ 5/5' : `${stats.done}/${stats.total}`;
+        counter.textContent = `${stats.complete ? '✓ ' : ''}${stats.done}/${stats.total}`;
 
         button.append(number, label, counter);
         button.addEventListener('click', () => {

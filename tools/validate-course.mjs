@@ -2,10 +2,16 @@
  * Static validation of the course data — runs without a browser.
  *
  * Catches the mistakes that are easy to make while authoring lessons: a missing
- * solution, a duplicate id, an unknown check kind, a task without hints.
+ * solution, a duplicate id, an unknown check kind, a task without hints. Every
+ * locale is validated, and the translation overlay is checked against the base
+ * content: unknown ids, check lists that drifted apart, missing translations.
  * Behaviour (do the solutions actually pass?) is covered by tests/selftest.
  */
-import { MODULES, LESSONS, TOTAL_LESSONS, TOTAL_TASKS } from '../src/course/index.js';
+import { buildCourse, CONTENT_LOCALES } from '../src/course/index.js';
+import { LOCALES } from '../src/i18n/index.js';
+import { uz } from '../src/course/i18n/uz/index.js';
+
+const OVERLAYS = { uz };
 
 const KINDS = new Set([
   'exists', 'absent', 'count', 'text', 'html', 'attr', 'noAttr', 'prop', 'style',
@@ -17,8 +23,6 @@ const EDITORS = new Set(['html', 'css', 'js']);
 const TASKS_PER_LESSON = 5;
 
 const problems = [];
-const lessonIds = new Set();
-const taskIds = new Set();
 
 function fail(where, message) {
   problems.push(`${where}: ${message}`);
@@ -63,11 +67,16 @@ function validateCheck(where, check) {
   }
 }
 
-for (const module of MODULES) {
-  if (!module.id || !module.title) fail('модуль', 'нет id или title');
+function validateCourse(locale) {
+  const course = buildCourse(locale);
+  const lessonIds = new Set();
+  const taskIds = new Set();
+
+  for (const module of course.modules) {
+  if (!module.id || !module.title) fail(`[${locale}] модуль`, 'нет id или title');
 
   for (const lesson of module.lessons) {
-    const where = `урок ${lesson.number} (${lesson.id})`;
+    const where = `[${locale}] урок ${lesson.number} (${lesson.id})`;
 
     if (lessonIds.has(lesson.id)) fail(where, 'повторяющийся id урока');
     lessonIds.add(lesson.id);
@@ -115,12 +124,80 @@ for (const module of MODULES) {
     if (difficulties[0] !== 'easy') fail(where, 'первая задача должна быть лёгкой');
     if (difficulties[difficulties.length - 1] !== 'hard') fail(where, 'последняя задача должна быть challenge (hard)');
   }
+  }
+
+  if (course.totalTasks !== course.totalLessons * TASKS_PER_LESSON) {
+    fail(`[${locale}] курс`, `${course.totalTasks} задач вместо ${course.totalLessons * TASKS_PER_LESSON}`);
+  }
+
+  return course;
 }
 
-if (LESSONS.length !== TOTAL_LESSONS) fail('курс', 'несовпадение количества уроков');
-if (TOTAL_TASKS !== TOTAL_LESSONS * TASKS_PER_LESSON) {
-  fail('курс', `${TOTAL_TASKS} задач вместо ${TOTAL_LESSONS * TASKS_PER_LESSON}`);
+/**
+ * Compares a translation overlay with the base course: ids it invents, check
+ * lists that no longer line up, and how much of the content it covers.
+ */
+function validateOverlay(locale, overlay, base) {
+  const where = `[${locale}] перевод`;
+  const stats = { lessons: 0, lessonsTotal: base.lessons.length, tasks: 0, tasksTotal: base.totalTasks, labels: 0, labelsTotal: 0 };
+
+  Object.keys(overlay.modules || {}).forEach((id) => {
+    if (!base.modules.some((module) => module.id === id)) fail(where, `нет модуля с id "${id}"`);
+  });
+
+  for (const lesson of base.lessons) {
+    const translation = (overlay.lessons || {})[lesson.id];
+    stats.labelsTotal += lesson.tasks.reduce((sum, task) => sum + task.checks.length, 0);
+    if (!translation) continue;
+    stats.lessons += 1;
+
+    if (translation.theory && !Array.isArray(translation.theory)) fail(`${where} → ${lesson.id}`, 'theory должна быть массивом блоков');
+
+    for (const taskId of Object.keys(translation.tasks || {})) {
+      const task = lesson.tasks.find((entry) => entry.id === taskId);
+      if (!task) {
+        fail(`${where} → ${lesson.id}`, `нет задачи с id "${taskId}"`);
+        continue;
+      }
+      stats.tasks += 1;
+
+      const patches = translation.tasks[taskId].checks;
+      if (patches !== undefined) {
+        if (!Array.isArray(patches)) {
+          fail(`${where} → ${taskId}`, 'checks должны быть массивом патчей (по индексу)');
+        } else if (patches.length !== task.checks.length) {
+          fail(`${where} → ${taskId}`, `патчей проверок ${patches.length}, а самих проверок ${task.checks.length} — перевод отстал от контента`);
+        } else {
+          stats.labels += patches.filter((patch) => patch && patch.label).length;
+        }
+      }
+
+      const hints = translation.tasks[taskId].hints;
+      if (hints !== undefined && (!Array.isArray(hints) || hints.length !== task.hints.length)) {
+        fail(`${where} → ${taskId}`, `подсказок в переводе ${Array.isArray(hints) ? hints.length : '—'}, в оригинале ${task.hints.length}`);
+      }
+    }
+  }
+
+  Object.keys(overlay.lessons || {}).forEach((id) => {
+    if (!base.lessons.some((lesson) => lesson.id === id)) fail(where, `нет урока с id "${id}"`);
+  });
+
+  return stats;
 }
+
+const base = validateCourse('ru');
+const coverage = [];
+
+for (const locale of CONTENT_LOCALES) {
+  if (locale === 'ru') continue;
+  validateCourse(locale);
+  coverage.push({ locale, ...validateOverlay(locale, OVERLAYS[locale] || {}, base) });
+}
+
+LOCALES.forEach(({ id }) => {
+  if (!CONTENT_LOCALES.includes(id)) fail('локали', `у локали "${id}" нет перевода контента`);
+});
 
 if (problems.length) {
   console.error(`✕ Найдено проблем: ${problems.length}\n`);
@@ -128,4 +205,12 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log(`✓ Курс валиден: ${TOTAL_LESSONS} уроков, ${TOTAL_TASKS} задач, ${MODULES.length} модуля`);
+console.log(`✓ Курс валиден: ${base.totalLessons} уроков, ${base.totalTasks} задач, ${base.modules.length} модуля`);
+coverage.forEach((entry) => {
+  const percent = (part, total) => (total ? Math.round((part / total) * 100) : 100);
+  console.log(
+    `  перевод ${entry.locale}: уроки ${entry.lessons}/${entry.lessonsTotal} (${percent(entry.lessons, entry.lessonsTotal)}%), ` +
+    `задачи ${entry.tasks}/${entry.tasksTotal} (${percent(entry.tasks, entry.tasksTotal)}%), ` +
+    `метки проверок ${entry.labels}/${entry.labelsTotal} (${percent(entry.labels, entry.labelsTotal)}%)`
+  );
+});
