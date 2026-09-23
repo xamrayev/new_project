@@ -135,21 +135,75 @@ a { color: var(--accent); }
 .btn--sm { padding: 4px 9px; font-size: 13px; }
 .btn--ghost { background: transparent; }
 
-/* ---- main grid: theory | playground | tasks ---- */
+/* ---- main grid: theory | playground | tasks | log ------------------------
+   The template is written by the pane manager into --cols, so closing a pane
+   hands its width to whatever is still open. Narrow screens override the whole
+   property below, which a custom property (unlike an inline style) allows. */
 .main {
   display: grid;
-  grid-template-columns: minmax(240px, 22%) minmax(0, 1fr) minmax(260px, 23%);
+  grid-template-columns: var(--cols, minmax(220px, 21%) minmax(320px, 1fr) minmax(240px, 22%));
   min-height: 0;
 }
-.main--no-theory { grid-template-columns: minmax(0, 1fr) minmax(260px, 23%); }
+
+/* ==========================================================================
+   Panes: closable, reopenable, full screen
+   ========================================================================== */
+.pane[hidden], .pg[hidden] { display: none !important; }
+
+.pane__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 12px;
+  min-height: 34px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+}
+.pane__title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.pane__extra { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
+.pane__tools { display: flex; gap: 2px; margin-left: auto; flex: 0 0 auto; }
+.pane__btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 5px 7px;
+}
+.pane__btn:hover { color: var(--text); border-color: var(--border); background: var(--bg-elev); }
+.pane__btn[aria-pressed="true"] { color: var(--accent); }
+
+/* Full screen is deliberately out of flow: it works the same wherever the
+   pane sits in the grid. */
+.pane--full {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 45;
+  border: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  box-shadow: var(--shadow);
+}
+html.has-full-pane { overflow: hidden; }
 
 /* ---- theory ---- */
 .theory {
-  overflow: auto;
-  padding: 18px 20px 40px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-panel);
 }
+.theory__body { overflow: auto; padding: 18px 20px 40px; }
 .theory h2 { font-size: 19px; margin: 0 0 4px; }
 .theory h3 { font-size: 15px; margin: 22px 0 6px; color: var(--text); }
 .theory p { margin: 0 0 10px; color: var(--text-dim); }
@@ -231,24 +285,31 @@ a { color: var(--accent); }
 }
 .tab[disabled] { opacity: .35; cursor: not-allowed; }
 .tab__dot { color: var(--accent); }
-.pg__actions { display: flex; gap: 6px; margin-left: auto; }
+.pg__actions { display: flex; gap: 6px; }
 
 .pg__split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: var(--split-cols, minmax(0, 1fr) minmax(0, 1fr));
   min-height: 0;
 }
-.pg__split--stack { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+/* Preview and console: two panes sharing one column. */
+.pg__right {
+  display: grid;
+  grid-template-rows: var(--right-rows, minmax(0, 1fr) minmax(120px, 34%));
+  min-height: 0;
+  min-width: 0;
+}
 
 /* ---- editor ---- */
 .editor {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   border-right: 1px solid var(--border);
   min-width: 0;
   background: var(--bg-input);
 }
+.editor .pane__head { background: var(--bg-panel); }
 .editor__pane { position: relative; display: flex; min-height: 0; overflow: hidden; }
 .editor__gutter {
   flex: 0 0 auto;
@@ -293,22 +354,12 @@ a { color: var(--accent); }
 /* ---- preview + console ---- */
 .preview {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(120px, 34%);
+  grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   background: var(--bg-panel);
 }
-.preview__label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-faint);
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--border-soft);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.preview__status { font-size: 11px; color: var(--accent); font-family: var(--mono); }
 .preview__frame { width: 100%; height: 100%; border: 0; background: #fff; display: block; }
 .console {
   border-top: 1px solid var(--border);
@@ -316,18 +367,9 @@ a { color: var(--accent); }
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+  min-width: 0;
 }
-.console__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-faint);
-  border-bottom: 1px solid var(--border-soft);
-}
+.console .pane__head { background: var(--bg-input); }
 .console__body {
   overflow: auto;
   min-height: 0;
@@ -355,17 +397,7 @@ a { color: var(--accent); }
   min-height: 0;
   min-width: 0;
 }
-.tasks__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-soft);
-  flex-wrap: wrap;
-}
-.tasks__progress { margin-left: auto; }
-.tasks__title { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-faint); }
-.tasks__progress { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+.tasks__progress { font-family: var(--mono); font-size: 12px; color: var(--text-dim); margin-left: auto; }
 .tasks__list {
   display: flex;
   flex-direction: column;
@@ -461,6 +493,174 @@ a { color: var(--accent); }
 .banner--ok   { background: var(--ok-bg);  color: var(--ok);  border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent); }
 .banner--fail { background: var(--err-bg); color: var(--err); border: 1px solid color-mix(in srgb, var(--err) 35%, transparent); }
 
+
+/* ==========================================================================
+   Top-bar log indicator and the pane menu
+   ========================================================================== */
+.top__log { display: inline-flex; align-items: center; gap: 4px; }
+.top__log-count { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+
+.panes-menu { position: relative; }
+.panes-menu__list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  min-width: 196px;
+  padding: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+.panes-menu__list[hidden] { display: none; }
+.panes-menu__caption {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  padding: 4px 8px 6px;
+}
+.panes-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.panes-menu__item:hover { background: var(--bg-elev); color: var(--text); }
+.panes-menu__item--on { color: var(--text); }
+.panes-menu__mark { font-family: var(--mono); color: var(--text-faint); }
+.panes-menu__item--on .panes-menu__mark { color: var(--ok); }
+
+/* ==========================================================================
+   Activity log
+   ========================================================================== */
+.logs {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  min-width: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.logs__count { font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); margin-left: auto; }
+.logs__foot { padding: 8px 12px; border-top: 1px solid var(--border-soft); }
+
+.log { display: flex; flex-direction: column; min-height: 0; }
+.log__list { flex: 1 1 auto; overflow: auto; min-height: 0; }
+.log__empty { margin: 0; padding: 16px 14px; font-size: 13px; font-style: italic; color: var(--text-faint); }
+.log__filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.chip {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); }
+.chip--on { border-color: var(--accent); background: var(--bg-input); color: var(--text); font-weight: 600; }
+
+.log-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 12.5px;
+}
+.log-row:last-child { border-bottom: 0; }
+.log-row__icon { text-align: center; font-size: 12px; }
+.log-row__main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-width: 0; }
+.log-row__kind { color: var(--text-dim); }
+.log-row__note, .log-row__where, .log-row__time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.log-row__note { white-space: normal; }
+/* The three entries that answer "did they write this themselves?" stand out. */
+.log-row--paste .log-row__kind,
+.log-row--solution .log-row__kind { color: var(--warn); font-weight: 600; }
+.log-row--type .log-row__kind { color: var(--ok); }
+.log-row--check .log-row__kind,
+.log-row--run .log-row__kind { color: var(--accent); }
+
+/* ==========================================================================
+   Modal
+   ========================================================================== */
+.scrim--modal { z-index: 50; }
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 51;
+  width: min(760px, 94vw);
+  max-height: 88vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.modal[hidden] { display: none; }
+.modal__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal__title { margin: 0; font-size: 15px; }
+.modal__tools { margin-left: auto; display: flex; gap: 6px; }
+.modal__body { overflow: auto; min-height: 0; }
+.modal--log .log { max-height: 48vh; }
+
+/* ==========================================================================
+   Cache
+   ========================================================================== */
+.cache { padding: 14px 16px 16px; border-top: 1px solid var(--border); }
+.cache__head { display: flex; align-items: baseline; gap: 10px; }
+.cache h3 { margin: 0; font-size: 14px; }
+.cache__total { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--text-faint); }
+.cache__hint { margin: 4px 0 10px; font-size: 12.5px; color: var(--text-faint); }
+.cache__rows { display: grid; gap: 6px; }
+.cache__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+.cache__name { flex: 1 1 auto; }
+.cache__stat { font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); }
+.cache__foot { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn--danger { border-color: color-mix(in srgb, var(--err) 45%, transparent); color: var(--err); }
+.btn--danger:hover:not(:disabled) { border-color: var(--err); background: var(--err-bg); }
+
 /* ==========================================================================
    Sidebar (course map)
    ========================================================================== */
@@ -542,52 +742,44 @@ a { color: var(--accent); }
 /* ==========================================================================
    Responsive
    ========================================================================== */
-@media (max-width: 1280px) {
-  /* Tasks drop under the playground, keeping the editor usable. */
-  .main {
-    grid-template-columns: minmax(220px, 26%) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(200px, 38%);
+@media (max-width: 1080px) {
+  /* One column: every open pane becomes a row and the page scrolls, instead of
+     squeezing six regions flat. The pane manager's templates are overridden
+     here on purpose — closing a pane simply removes its row. */
+  .app { height: auto; min-height: 100%; }
+  .main { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
+  .theory {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    max-height: 60vh;
   }
-  .main--no-theory { grid-template-columns: minmax(0, 1fr); }
-  .theory { grid-row: span 2; }
-  .tasks {
+  .pg { border-bottom: 1px solid var(--border); }
+  .pg__split { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
+  .pg__right { grid-template-rows: none; grid-auto-rows: auto; }
+  .editor { border-right: 0; border-bottom: 1px solid var(--border); min-height: 320px; }
+  .preview { min-height: 300px; border-bottom: 1px solid var(--border); }
+  .console { min-height: 200px; }
+  .tasks, .logs {
     border-left: 0;
     border-top: 1px solid var(--border);
     grid-template-rows: auto auto minmax(0, 1fr);
+    min-height: 420px;
   }
+  .logs { grid-template-rows: auto minmax(0, 1fr) auto; min-height: 360px; }
   .tasks__list { flex-direction: row; overflow-x: auto; }
   .task-chip { width: auto; white-space: nowrap; }
-  .task-chip__label { white-space: nowrap; }
-}
-
-@media (max-width: 1080px) {
-  /* One column: the page scrolls instead of squeezing every region flat. */
-  .app { height: auto; min-height: 100%; }
-  .main {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-  }
-  .theory {
-    grid-row: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-    max-height: 40vh;
-  }
-  .pg { min-height: 78vh; }
-  .pg__split {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(220px, 1fr) minmax(320px, 1fr);
-  }
-  .editor { border-right: 0; border-bottom: 1px solid var(--border); }
-  .preview { grid-template-rows: auto minmax(180px, 1fr) minmax(120px, 32%); }
-  .tasks { min-height: 60vh; }
+  /* Full screen still means full screen, not "as tall as the row". */
+  .pane--full { height: 100% !important; }
 }
 
 @media (max-width: 720px) {
   body { font-size: 14px; }
   .theory { max-height: none; }
-  .pg__split { grid-template-rows: minmax(260px, auto) minmax(360px, auto); }
-  .preview { grid-template-rows: auto 240px minmax(140px, auto); }
+  .editor { min-height: 260px; }
+  .preview { min-height: 240px; }
   .top { flex-wrap: wrap; }
   .top__counter { order: 3; }
+  .top__nav { flex-wrap: wrap; }
+  .modal { width: 96vw; max-height: 92vh; }
+  .modal--log .log { max-height: 42vh; }
 }

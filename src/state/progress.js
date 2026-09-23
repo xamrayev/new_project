@@ -9,12 +9,23 @@
  *   drafts: { "<lessonId>:<taskId>": { html, css, js } },
  *   last:   { lessonId, taskId },
  *   theme:  "dark" | "light",
- *   locale: "ru" | "uz"
+ *   locale: "ru" | "uz",
+ *   panes:  { closed: string[], full: string | null }
  * }
  */
 
-const KEY = 'webdev-course:v1';
-const EMPTY = { version: 1, tasks: {}, drafts: {}, last: null, theme: 'dark', locale: null };
+export const PROGRESS_KEY = 'webdev-course:v1';
+
+const KEY = PROGRESS_KEY;
+const EMPTY = {
+  version: 1,
+  tasks: {},
+  drafts: {},
+  last: null,
+  theme: 'dark',
+  locale: null,
+  panes: null
+};
 
 function read() {
   try {
@@ -111,6 +122,29 @@ export class Progress {
     write(this.state);
   }
 
+  clearDrafts() {
+    this.state.drafts = {};
+    this.#commit();
+  }
+
+  get draftCount() { return Object.keys(this.state.drafts).length; }
+
+  get solvedCount() {
+    return Object.values(this.state.tasks).reduce(
+      (total, lesson) => total + Object.keys(lesson).length,
+      0
+    );
+  }
+
+  /** Rough size of one slice of the stored state, for the cache report. */
+  bytesOf(field) {
+    try {
+      return JSON.stringify(this.state[field] || {}).length;
+    } catch (error) {
+      return 0;
+    }
+  }
+
   /* --------------------------------------------------------------- position */
 
   get last() { return this.state.last; }
@@ -138,9 +172,33 @@ export class Progress {
     write(this.state);
   }
 
+  /* ------------------------------------------------------------------ panes */
+
+  get panes() { return this.state.panes; }
+
+  setPanes(panes) {
+    this.state.panes = panes;
+    write(this.state);
+  }
+
   /* ------------------------------------------------------------------ admin */
 
   export() { return JSON.stringify(this.state, null, 2); }
+
+  get bytes() {
+    try {
+      return (localStorage.getItem(KEY) || '').length;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  /** Wipes solved tasks and the saved position, but keeps drafts and settings. */
+  resetTasks() {
+    this.state.tasks = {};
+    this.state.last = null;
+    this.#commit();
+  }
 
   resetAll() {
     this.state = structuredClone(EMPTY);

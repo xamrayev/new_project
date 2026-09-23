@@ -2,6 +2,11 @@
  * A deliberately small code editor: a <textarea> with a synced line gutter,
  * Tab indentation and bracket/quote auto-closing. No dependency, no build step —
  * everything a beginner needs and nothing that gets in the way.
+ *
+ * It also reports *how* the text arrived — typed, pasted or deleted — so the
+ * activity log can tell the difference. Programmatic changes (`setValue`, used
+ * when a task is opened or a solution is revealed) report nothing: the caller
+ * knows what it did and logs it itself.
  */
 
 import { t } from '../i18n/index.js';
@@ -13,10 +18,14 @@ export class CodeEditor {
   /**
    * @param {object} options
    * @param {(value: string) => void} options.onChange fired on every edit (debounced by the caller)
+   * @param {(event: {kind: 'type'|'paste'|'delete', chars: number}) => void} [options.onActivity]
    */
-  constructor({ onChange } = {}) {
+  constructor({ onChange, onActivity } = {}) {
     this.onChange = onChange || (() => {});
+    this.onActivity = onActivity || (() => {});
     this.lineCount = -1;
+    this.lastLength = 0;
+    this.pendingPaste = 0;
 
     this.root = document.createElement('div');
     this.root.className = 'editor';
@@ -47,9 +56,21 @@ export class CodeEditor {
     this.pane.append(this.gutter, this.area);
     this.root.append(this.pane, this.hintbar);
 
-    this.area.addEventListener('input', () => {
+    this.area.addEventListener('input', (event) => {
+      const delta = this.area.value.length - this.lastLength;
       this.#refresh();
+      this.#report(event, delta);
       this.onChange(this.area.value);
+    });
+    // Both land as an `input` event right after; the flag carries the size of
+    // what arrived, which the event itself does not expose.
+    this.area.addEventListener('paste', (event) => {
+      const text = (event.clipboardData && event.clipboardData.getData('text')) || '';
+      this.pendingPaste = text.length || 1;
+    });
+    this.area.addEventListener('drop', (event) => {
+      const text = (event.dataTransfer && event.dataTransfer.getData('text')) || '';
+      this.pendingPaste = text.length || 1;
     });
     this.area.addEventListener('scroll', () => {
       this.gutter.scrollTop = this.area.scrollTop;
@@ -63,9 +84,11 @@ export class CodeEditor {
 
   get value() { return this.area.value; }
 
+  /** Replaces the text without reporting any activity — this is not the student typing. */
   setValue(value, { keepScroll = false } = {}) {
     const top = this.area.scrollTop;
     this.area.value = value;
+    this.pendingPaste = 0;
     this.#refresh();
     if (keepScroll) this.area.scrollTop = top;
   }
@@ -79,7 +102,25 @@ export class CodeEditor {
 
   focus() { this.area.focus(); }
 
+  /** Classifies an edit: pasted, deleted or actually typed. */
+  #report(event, delta) {
+    const inputType = (event && event.inputType) || '';
+    const pasted = this.pendingPaste;
+    this.pendingPaste = 0;
+
+    if (pasted || /Paste|Drop/.test(inputType)) {
+      this.onActivity({ kind: 'paste', chars: Math.max(delta, pasted, 1) });
+      return;
+    }
+    if (delta < 0 || inputType.startsWith('delete')) {
+      this.onActivity({ kind: 'delete', chars: Math.abs(delta) || 1 });
+      return;
+    }
+    this.onActivity({ kind: 'type', chars: delta || 1 });
+  }
+
   #refresh() {
+    this.lastLength = this.area.value.length;
     const lines = this.area.value.split('\n').length;
     if (lines !== this.lineCount) {
       this.lineCount = lines;
@@ -102,7 +143,9 @@ export class CodeEditor {
     this.area.value = value.slice(0, start) + text + value.slice(end);
     const caret = start + (caretOffset === undefined ? text.length : caretOffset);
     this.area.selectionStart = this.area.selectionEnd = caret;
+    const delta = this.area.value.length - this.lastLength;
     this.#refresh();
+    this.onActivity({ kind: delta < 0 ? 'delete' : 'type', chars: Math.abs(delta) || 1 });
     this.onChange(this.area.value);
   }
 
@@ -153,6 +196,7 @@ export class CodeEditor {
         this.area.value = value.slice(0, start - 1) + value.slice(start + 1);
         this.area.selectionStart = this.area.selectionEnd = start - 1;
         this.#refresh();
+        this.onActivity({ kind: 'delete', chars: 2 });
         this.onChange(this.area.value);
       }
     }
@@ -168,7 +212,9 @@ export class CodeEditor {
     this.area.value = value.slice(0, from) + updated + value.slice(end);
     this.area.selectionStart = from;
     this.area.selectionEnd = from + updated.length;
+    const delta = this.area.value.length - this.lastLength;
     this.#refresh();
+    this.onActivity({ kind: delta < 0 ? 'delete' : 'type', chars: Math.abs(delta) || 1 });
     this.onChange(this.area.value);
   }
 }

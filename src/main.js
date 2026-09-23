@@ -1,6 +1,7 @@
 /* Entry point: restore the theme, build the app, report fatal errors plainly. */
 import { App } from './ui/app.js';
 import { Progress } from './state/progress.js';
+import { ActivityLog } from './state/activity-log.js';
 import { loadHarness } from './playground/runner.js';
 import { detectLocale, setLocale, t } from './i18n/index.js';
 
@@ -8,6 +9,7 @@ const root = document.querySelector('#app');
 
 async function start() {
   const progress = new Progress();
+  const log = new ActivityLog();
   document.documentElement.dataset.theme = progress.theme;
   setLocale(detectLocale(progress.locale));
 
@@ -15,7 +17,7 @@ async function start() {
   // fetching the harness (and ES modules in general) is blocked.
   await loadHarness();
 
-  const app = new App(progress);
+  const app = new App(progress, log);
   app.mount(root);
 }
 

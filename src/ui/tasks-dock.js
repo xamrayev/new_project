@@ -6,13 +6,15 @@ import { inline } from './markup.js';
 import { t } from '../i18n/index.js';
 
 export class TasksDock {
-  constructor({ progress, onSelectTask, onCheck, onReset, onShowSolution, onNext }) {
+  constructor({ progress, panes, onSelectTask, onCheck, onReset, onShowSolution, onNext, onHint }) {
     this.progress = progress;
+    this.panes = panes;
     this.onSelectTask = onSelectTask;
     this.onCheck = onCheck;
     this.onReset = onReset;
     this.onShowSolution = onShowSolution;
     this.onNext = onNext;
+    this.onHint = onHint || (() => {});
 
     this.lesson = null;
     this.task = null;
@@ -21,14 +23,13 @@ export class TasksDock {
     this.root = document.createElement('section');
     this.root.className = 'tasks';
 
-    const head = document.createElement('div');
-    head.className = 'tasks__head';
-    const title = document.createElement('span');
-    title.className = 'tasks__title';
-    title.textContent = t('dock.title');
     this.progressLabel = document.createElement('span');
     this.progressLabel.className = 'tasks__progress';
-    head.append(title, this.progressLabel);
+
+    const head = this.panes
+      ? this.panes.head('tasks', t('pane.tasks'), { extra: this.progressLabel })
+      : plainHead(t('pane.tasks'), this.progressLabel);
+    if (this.panes) this.panes.register('tasks', this.root);
 
     this.list = document.createElement('div');
     this.list.className = 'tasks__list';
@@ -136,6 +137,7 @@ export class TasksDock {
         'btn btn--sm',
         () => {
           this.revealedHints = Math.min(this.revealedHints + 1, task.hints.length);
+          this.onHint(this.revealedHints, task.hints.length);
           this.renderPanel();
         }
       );
@@ -203,6 +205,16 @@ export class TasksDock {
       }
     }
   }
+}
+
+function plainHead(title, extra) {
+  const head = document.createElement('div');
+  head.className = 'pane__head';
+  const label = document.createElement('span');
+  label.className = 'pane__title';
+  label.textContent = title;
+  head.append(label, extra);
+  return head;
 }
 
 function button(text, className, onClick) {
