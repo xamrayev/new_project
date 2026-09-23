@@ -1,8 +1,12 @@
 /*
  * The universal playground: HTML / CSS / JS editors, a live preview and a
- * console panel. One instance serves every lesson — a lesson only declares
- * which editors it exposes and which sandbox extras (mock API, storage seed)
- * it needs.
+ * console. One instance serves every lesson — a lesson only declares which
+ * editors it exposes and which sandbox extras (mock API, storage seed) it
+ * needs.
+ *
+ * The editor, the preview and the console are three independent panes: each
+ * can be closed or blown up to full screen, and the pane manager rebuilds the
+ * grid so whatever stays open takes the freed space.
  */
 import { CodeEditor } from './editor.js';
 import { SandboxRunner } from './runner.js';
@@ -15,10 +19,12 @@ const LANGUAGES = [
 ];
 
 export class Playground {
-  constructor({ onRun, onRequestCheck, onReset } = {}) {
+  constructor({ onRun, onRequestCheck, onReset, onActivity, panes } = {}) {
     this.onRun = onRun || (() => {});
     this.onRequestCheck = onRequestCheck || (() => {});
     this.onReset = onReset || (() => {});
+    this.onActivity = onActivity || (() => {});
+    this.panes = panes;
 
     this.source = { html: '', css: '', js: '' };
     this.enabled = ['html', 'css', 'js'];
@@ -65,62 +71,80 @@ export class Playground {
 
     const actions = document.createElement('div');
     actions.className = 'pg__actions';
-
-    this.runButton = button(t('pg.run'), 'btn btn--sm btn--primary', () => this.run({ force: true }));
+    this.runButton = button(t('pg.run'), 'btn btn--sm btn--primary', () => this.run({ force: true, byUser: true }));
     this.checkButton = button(t('dock.check'), 'btn btn--sm btn--ok', () => this.onRequestCheck());
     this.resetButton = button(t('pg.reset'), 'btn btn--sm', () => this.onReset());
     actions.append(this.runButton, this.checkButton, this.resetButton);
+    bar.append(actions);
 
-    bar.append(this.tabs, actions);
+    this.split = document.createElement('div');
+    this.split.className = 'pg__split';
 
-    const split = document.createElement('div');
-    split.className = 'pg__split';
+    /* ---- editor pane: the language tabs live in its header ---- */
+    this.editor = new CodeEditor({
+      onChange: (value) => this.#onEdit(value),
+      onActivity: (event) => this.onActivity({ ...event, lang: this.active })
+    });
+    this.editor.root.prepend(this.#head('editor', t('pane.editor'), this.tabs));
 
-    this.editor = new CodeEditor({ onChange: (value) => this.#onEdit(value) });
+    /* ---- preview and console: two panes stacked in one column ---- */
+    this.right = document.createElement('div');
+    this.right.className = 'pg__right';
 
-    const preview = document.createElement('div');
-    preview.className = 'preview';
-
-    const label = document.createElement('div');
-    label.className = 'preview__label';
+    this.previewPane = document.createElement('div');
+    this.previewPane.className = 'preview';
     this.previewStatus = document.createElement('span');
-    this.previewStatus.textContent = t('pg.preview');
-    label.append(this.previewStatus);
-
+    this.previewStatus.className = 'preview__status';
     this.frame = document.createElement('iframe');
     this.frame.className = 'preview__frame';
     this.frame.title = t('pg.previewFrame');
     this.frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals allow-popups');
+    this.previewPane.append(this.#head('preview', t('pane.preview'), this.previewStatus), this.frame);
 
-    // The console sits under the preview and is always live: a student should
-    // never have to open a panel to find out why nothing happened.
+    // The console is always live: a student should never have to open a panel
+    // to find out why nothing happened.
     this.consolePanel = document.createElement('div');
     this.consolePanel.className = 'console';
-    const consoleHead = document.createElement('div');
-    consoleHead.className = 'console__head';
-    const consoleTitle = document.createElement('span');
-    consoleTitle.textContent = t('pg.console');
     const clear = button(t('pg.consoleClear'), 'btn btn--sm btn--ghost', () => this.clearConsole());
-    clear.style.marginLeft = 'auto';
-    consoleHead.append(consoleTitle, clear);
     this.consoleBody = document.createElement('div');
     this.consoleBody.className = 'console__body';
-    this.consolePanel.append(consoleHead, this.consoleBody);
+    this.consolePanel.append(this.#head('console', t('pane.console'), clear), this.consoleBody);
     this.clearConsole();
 
-    preview.append(label, this.frame, this.consolePanel);
-    split.append(this.editor.root, preview);
-    this.root.append(bar, split);
+    this.right.append(this.previewPane, this.consolePanel);
+    this.split.append(this.editor.root, this.right);
+    this.root.append(bar, this.split);
+
+    if (this.panes) {
+      this.panes.register('editor', this.editor.root);
+      this.panes.register('preview', this.previewPane);
+      this.panes.register('console', this.consolePanel);
+    }
 
     this.root.addEventListener('keydown', (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
-        this.run({ force: true });
-      }
-      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && event.shiftKey) {
-        this.onRequestCheck();
+        if (event.shiftKey) this.onRequestCheck();
+        else this.run({ force: true, byUser: true });
       }
     });
+  }
+
+  /** A pane header when the pane manager is around, a plain strip otherwise. */
+  #head(id, title, extra) {
+    if (this.panes) return this.panes.head(id, title, { extra });
+    const head = document.createElement('div');
+    head.className = 'pane__head';
+    const label = document.createElement('span');
+    label.className = 'pane__title';
+    label.textContent = title;
+    head.append(label, extra);
+    return head;
+  }
+
+  /** The containers whose grid templates follow the open panes. */
+  get containers() {
+    return { pg: this.root, split: this.split, right: this.right };
   }
 
   /* ----------------------------------------------------------------- state */
@@ -181,19 +205,28 @@ export class Playground {
     this.debounce = setTimeout(() => this.run(), 800);
   }
 
+  #setStatus(key) {
+    this.previewStatus.textContent = key ? t(key) : '';
+  }
+
   /* ------------------------------------------------------------- execution */
 
-  async run({ force = false } = {}) {
+  /**
+   * @param {object} [options]
+   * @param {boolean} [options.force] run even while a previous render is in flight
+   * @param {boolean} [options.byUser] the student pressed Run — worth logging
+   */
+  async run({ force = false, byUser = false } = {}) {
     if (this.busy && !force) return;
     this.source[this.active] = this.editor.value;
     this.busy = true;
-    this.previewStatus.textContent = t('pg.running');
+    this.#setStatus('pg.running');
     this.clearConsole();
     try {
       this.runner.setConfig({ ...this.sandbox, storageSeed: this.liveStorage });
       await this.runner.render(this.source);
-      this.previewStatus.textContent = t('pg.preview');
-      this.onRun(this.getSource());
+      this.#setStatus('');
+      this.onRun(this.getSource(), { byUser });
     } finally {
       this.busy = false;
     }
@@ -203,14 +236,14 @@ export class Playground {
   async check(checks) {
     this.source[this.active] = this.editor.value;
     this.clearConsole();
-    this.previewStatus.textContent = t('pg.checking');
+    this.#setStatus('pg.checking');
     try {
       // Grading always starts from the lesson's declared storage, never from
       // whatever the student left behind while experimenting.
       this.runner.setConfig({ ...this.sandbox, storageSeed: { ...(this.sandbox.storageSeed || {}) } });
       return await this.runner.check(this.source, checks);
     } finally {
-      this.previewStatus.textContent = t('pg.preview');
+      this.#setStatus('');
     }
   }
 

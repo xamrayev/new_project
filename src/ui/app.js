@@ -1,10 +1,15 @@
 /*
- * Application shell: wires the course data, the playground and the progress
- * store together, and keeps the URL hash in sync with the current task.
+ * Application shell: wires the course data, the playground, the progress store
+ * and the activity log together, and keeps the URL hash in sync with the
+ * current task.
+ *
+ * The workspace is a set of panes (theory, editor, preview, console, tasks,
+ * log). The pane manager owns which of them are open and rebuilds the grid
+ * whenever that changes; the shell only says which element is which pane.
  *
  * Switching the language rebuilds the course for the new locale and re-mounts
- * the whole shell — progress, drafts and the current task are keyed by id, so
- * nothing is lost in the swap.
+ * the whole shell — progress, drafts, the log and the current task are keyed
+ * by id, so nothing is lost in the swap.
  */
 import { buildCourse } from '../course/index.js';
 import { Playground } from '../playground/playground.js';
@@ -12,16 +17,21 @@ import { LOCALES, getLocale, setLocale, t } from '../i18n/index.js';
 import { renderBlocks } from './markup.js';
 import { Sidebar } from './sidebar.js';
 import { TasksDock } from './tasks-dock.js';
+import { PaneManager } from './panes.js';
+import { Modal } from './modal.js';
+import { CacheSection, LogView } from './log-view.js';
 import { toast } from './toast.js';
 
 export class App {
-  constructor(progress) {
+  constructor(progress, log) {
     this.progress = progress;
+    this.log = log;
     this.course = buildCourse(getLocale());
     this.lesson = null;
     this.task = null;
     this.checking = false;
     this.onHashChange = () => this.#fromHash();
+    this.onKeyDown = (event) => this.#onKeyDown(event);
   }
 
   mount(root) {
@@ -29,30 +39,41 @@ export class App {
     root.textContent = '';
     root.className = 'app';
 
+    this.panes = new PaneManager({
+      progress: this.progress,
+      onChange: (panes, info) => this.#onPanesChanged(info)
+    });
+
     this.#buildTopBar();
 
     this.main = document.createElement('div');
     this.main.className = 'main';
 
-    this.theory = document.createElement('article');
-    this.theory.className = 'theory';
+    this.#buildTheory();
 
     this.playground = new Playground({
-      onRun: (source) => this.#saveDraft(source),
+      panes: this.panes,
+      onRun: (source, options) => this.#afterRun(source, options),
       onRequestCheck: () => this.check(),
-      onReset: () => this.resetTask()
+      onReset: () => this.resetTask(),
+      onActivity: (event) => this.log.add(event.kind, { lang: event.lang, chars: event.chars })
     });
-
-    this.main.append(this.theory, this.playground.root);
 
     this.dock = new TasksDock({
       progress: this.progress,
+      panes: this.panes,
       onSelectTask: (task) => this.openTask(this.lesson, task),
       onCheck: () => this.check(),
       onReset: () => this.resetTask(),
       onShowSolution: () => this.showSolution(),
-      onNext: () => this.goNext()
+      onNext: () => this.goNext(),
+      onHint: (shown, total) => this.log.add('hint', { shown, total })
     });
+
+    this.#buildLogsPane();
+    this.#buildLogModal();
+
+    this.main.append(this.theory, this.playground.root, this.dock.root, this.logsPane);
 
     this.sidebar = new Sidebar({
       course: this.course,
@@ -61,18 +82,29 @@ export class App {
       onReset: () => this.resetProgress()
     });
 
-    // Tasks live in the third column of the main grid, next to the playground.
-    this.main.append(this.dock.root);
     root.append(this.top, this.main);
     document.body.append(this.sidebar.scrim, this.sidebar.root);
 
+    this.panes.setContainers({ main: this.main, ...this.playground.containers });
+    this.panes.apply();
+
+    this.unsubscribeLog = this.log.subscribe(() => this.#refreshLogCounts());
+    this.#refreshLogCounts();
+
     window.addEventListener('hashchange', this.onHashChange);
+    document.addEventListener('keydown', this.onKeyDown);
     this.#fromHash();
   }
 
   /** Tears the shell down so it can be rebuilt in another language. */
   unmount() {
     window.removeEventListener('hashchange', this.onHashChange);
+    document.removeEventListener('keydown', this.onKeyDown);
+    if (this.unsubscribeLog) this.unsubscribeLog();
+    this.panes.destroy();
+    this.logView.destroy();
+    this.modalLogView.destroy();
+    this.logModal.unmount();
     this.sidebar.scrim.remove();
     this.sidebar.root.remove();
     this.root.textContent = '';
@@ -110,7 +142,14 @@ export class App {
     this.previousButton = this.#navButton('←', t('top.previousLesson'), () => this.goToNeighbour('previous'));
     this.nextButton = this.#navButton('→', t('top.nextLesson'), () => this.goToNeighbour('next'));
     const theme = this.#navButton('◐', t('top.toggleTheme'), () => this.toggleTheme());
-    nav.append(this.#languagePicker(), this.previousButton, this.nextButton, theme);
+    nav.append(
+      this.#logButton(),
+      this.panes.menu(),
+      this.#languagePicker(),
+      this.previousButton,
+      this.nextButton,
+      theme
+    );
 
     this.top.append(burger, titleBox, spacer, this.counter, nav);
   }
@@ -123,6 +162,20 @@ export class App {
     element.title = label;
     element.setAttribute('aria-label', label);
     element.addEventListener('click', onClick);
+    return element;
+  }
+
+  /** The log indicator: how many actions are recorded, one click from the full history. */
+  #logButton() {
+    const element = document.createElement('button');
+    element.className = 'btn btn--sm top__log';
+    element.type = 'button';
+    element.title = t('top.logs');
+    element.setAttribute('aria-label', t('top.logs'));
+    this.logBadge = document.createElement('span');
+    this.logBadge.className = 'top__log-count';
+    element.append(document.createTextNode('📋 '), this.logBadge);
+    element.addEventListener('click', () => this.logModal.toggle());
     return element;
   }
 
@@ -145,10 +198,93 @@ export class App {
     return select;
   }
 
+  /* ----------------------------------------------------------------- panes */
+
+  #buildTheory() {
+    this.theory = document.createElement('article');
+    this.theory.className = 'theory';
+    this.theoryBody = document.createElement('div');
+    this.theoryBody.className = 'theory__body';
+    this.theory.append(this.panes.head('theory', t('pane.theory')), this.theoryBody);
+    this.panes.register('theory', this.theory);
+  }
+
+  /** The log as a column of its own, for students who want it always in sight. */
+  #buildLogsPane() {
+    this.logsPane = document.createElement('section');
+    this.logsPane.className = 'logs';
+
+    this.logPaneCount = document.createElement('span');
+    this.logPaneCount.className = 'logs__count';
+
+    this.logView = new LogView({ log: this.log, course: this.course });
+
+    const foot = document.createElement('div');
+    foot.className = 'logs__foot';
+    const manage = document.createElement('button');
+    manage.type = 'button';
+    manage.className = 'btn btn--sm btn--ghost';
+    manage.textContent = t('log.manage');
+    manage.addEventListener('click', () => this.logModal.open());
+    foot.append(manage);
+
+    this.logsPane.append(
+      this.panes.head('logs', t('pane.logs'), { extra: this.logPaneCount }),
+      this.logView.root,
+      foot
+    );
+    this.panes.register('logs', this.logsPane);
+  }
+
+  #buildLogModal() {
+    this.logModal = new Modal({ title: t('log.title'), className: 'modal--log' });
+    this.modalLogView = new LogView({ log: this.log, course: this.course, filters: true });
+    this.cacheSection = new CacheSection({
+      progress: this.progress,
+      log: this.log,
+      onClear: (id) => this.#afterCacheClear(id)
+    });
+    this.logModal.body.append(this.modalLogView.root, this.cacheSection.root);
+    this.logModal.onOpen = () => this.cacheSection.render();
+    this.logModal.mount();
+  }
+
+  #onPanesChanged(info) {
+    if (info && info.refused) toast(t('pane.lastOpen'), 'err');
+  }
+
+  #onKeyDown(event) {
+    if (event.key !== 'Escape') return;
+    // Escape belongs to whatever is on top: the modal and the sidebar close
+    // themselves, and only then does it leave full screen.
+    if (this.logModal.isOpen || this.sidebar.isOpen) return;
+    this.panes.exitFull();
+  }
+
+  #refreshLogCounts() {
+    const count = this.log.entries.length;
+    this.logBadge.textContent = String(count);
+    this.logPaneCount.textContent = t('log.count', { count });
+  }
+
+  #afterCacheClear(id) {
+    if (id !== 'log') this.log.add('system', { detail: t(`log.detail.cleared.${id}`) });
+    if (id === 'progress' || id === 'all') {
+      this.sidebar.render(this.lesson.id);
+      this.dock.render();
+    }
+    if (id === 'drafts' || id === 'all') {
+      this.playground.setSource(this.task.starter);
+      this.dock.setResults(null);
+    }
+    toast(t('toast.cacheCleared'), 'info');
+  }
+
   changeLocale(locale) {
     if (locale === getLocale()) return;
     setLocale(locale);
     this.progress.setLocale(locale);
+    this.log.add('system', { detail: t('log.detail.locale', { locale: locale.toUpperCase() }) });
 
     const position = { lessonId: this.lesson.id, taskPosition: this.task.position };
     this.course = buildCourse(locale);
@@ -193,6 +329,7 @@ export class App {
   }
 
   openTask(lesson, task, { silent = false } = {}) {
+    const moved = !this.task || this.task.id !== task.id;
     this.lesson = lesson;
     this.task = task;
 
@@ -203,6 +340,15 @@ export class App {
     }
 
     this.progress.setLast(lesson.id, task.id);
+    this.log.setContext({
+      lessonId: lesson.id,
+      lessonNumber: lesson.number,
+      taskId: task.id,
+      taskPosition: task.position
+    });
+    // Re-mounting for a language change re-opens the same task; only a real
+    // move is worth an entry.
+    if (moved) this.log.add('open');
 
     this.lessonTitle.textContent = t('top.lesson', { number: lesson.number, title: lesson.title });
     this.moduleTitle.textContent = `${lesson.moduleTitle} · ${lesson.summary}`;
@@ -212,8 +358,8 @@ export class App {
     this.previousButton.disabled = !around.previous;
     this.nextButton.disabled = !around.next;
 
-    this.theory.innerHTML = `<h2>${lesson.title}</h2>${renderBlocks(lesson.theory)}`;
-    this.theory.scrollTop = 0;
+    this.theoryBody.innerHTML = `<h2>${lesson.title}</h2>${renderBlocks(lesson.theory)}`;
+    this.theoryBody.scrollTop = 0;
 
     this.playground.configure({ editors: lesson.editors, sandbox: task.sandbox });
     const draft = this.progress.getDraft(lesson.id, task.id);
@@ -260,8 +406,10 @@ export class App {
       const results = await this.playground.check(this.task.checks);
       this.dock.setResults(results);
 
-      const passed = results.every((result) => result.ok);
-      if (passed) {
+      const passed = results.filter((result) => result.ok).length;
+      this.log.add('check', { passed, total: results.length });
+
+      if (passed === results.length) {
         const isNew = this.progress.markTask(this.lesson.id, this.task.id, true);
         this.sidebar.render(this.lesson.id);
         this.dock.render();
@@ -288,12 +436,14 @@ export class App {
     this.playground.configure({ editors: this.lesson.editors, sandbox: this.task.sandbox });
     this.playground.setSource(this.task.starter);
     this.dock.setResults(null);
+    this.log.add('reset');
     toast(t('toast.taskReset'), 'info');
   }
 
   showSolution() {
     if (!window.confirm(t('confirm.showSolution'))) return;
     this.playground.setSource(this.task.solution);
+    this.log.add('solution');
     toast(t('toast.solutionLoaded'), 'info', 4000);
   }
 
@@ -302,11 +452,12 @@ export class App {
     this.progress.resetAll();
     this.sidebar.render(this.lesson.id);
     this.dock.render();
+    this.log.add('system', { detail: t('log.detail.cleared.progress') });
     toast(t('toast.progressReset'), 'info');
   }
 
-  #saveDraft(source) {
-    if (!this.lesson || !this.task) return;
-    this.progress.saveDraft(this.lesson.id, this.task.id, source);
+  #afterRun(source, { byUser } = {}) {
+    if (this.lesson && this.task) this.progress.saveDraft(this.lesson.id, this.task.id, source);
+    if (byUser) this.log.add('run');
   }
 }
