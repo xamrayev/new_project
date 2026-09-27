@@ -9,6 +9,7 @@
 import { LOG_GROUPS } from '../state/activity-log.js';
 import { cacheReport, clearCache, formatBytes, totalBytes } from '../state/cache.js';
 import { t } from '../i18n/index.js';
+import { confirmDialog } from './modal.js';
 
 const ICONS = {
   open: '📄',
@@ -239,8 +240,8 @@ export class CacheSection {
     this.render();
   }
 
-  #clear(id, question) {
-    if (!window.confirm(question)) return;
+  async #clear(id, question) {
+    if (!(await confirmDialog(question, { danger: true }))) return;
     clearCache(id, { progress: this.progress, log: this.log });
     this.render();
     this.onClear(id);

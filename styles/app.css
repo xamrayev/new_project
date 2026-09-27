@@ -64,6 +64,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--accent); }
 
 .boot { padding: 40px; color: var(--text-dim); }
+.boot h2 { color: var(--text); font-size: 20px; }
+.boot__error {
+  white-space: pre-wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--err-bg);
+  color: var(--err);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.boot li { margin: 6px 0; }
 
 /* ==========================================================================
    App layout
@@ -93,6 +104,9 @@ a { color: var(--accent); }
   line-height: 1;
 }
 .top__burger:hover { border-color: var(--accent); }
+.top__home { display: flex; flex: none; border-radius: 8px; }
+.top__home img { display: block; }
+.top__home:hover { filter: brightness(1.1); }
 .top__title { display: flex; flex-direction: column; min-width: 0; }
 .top__lesson {
   font-weight: 650;
@@ -634,6 +648,10 @@ html.has-full-pane { overflow: hidden; }
 .modal__tools { margin-left: auto; display: flex; gap: 6px; }
 .modal__body { overflow: auto; min-height: 0; }
 .modal--log .log { max-height: 48vh; }
+.scrim--confirm { z-index: 60; }
+.modal--confirm { z-index: 61; width: min(440px, 92vw); }
+.confirm__text { margin: 0; padding: 16px 16px 4px; line-height: 1.5; }
+.confirm__actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 16px; }
 
 /* ==========================================================================
    Cache

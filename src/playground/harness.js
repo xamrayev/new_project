@@ -219,6 +219,8 @@
   /* ------------------------------------------------------------- check tools */
 
   var probe = null;
+  var SNAPPED_WIDTH = /^(border(-(top|right|bottom|left))?-width|outline-width|column-rule-width)$/;
+
   function normalizeCssValue(prop, value) {
     if (!probe) {
       probe = document.createElement('div');
@@ -226,7 +228,12 @@
       probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:100px;height:100px;';
       (document.body || document.documentElement).appendChild(probe);
     }
-    probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:100px;height:100px;';
+    // Border/outline styles make the probe's widths real: with `none` a width
+    // computes to 0px. They also let the browser snap the probe's widths to
+    // device pixels exactly as it snaps the student's (at 90% zoom on a 2x
+    // screen `1px` computes to `0.55px`), so both sides compare equal.
+    probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:100px;height:100px;' +
+      'border-style:solid;outline-style:solid;column-rule-style:solid;';
     try { probe.style.setProperty(prop, value); } catch (e) { return String(value); }
     var computed = getComputedStyle(probe).getPropertyValue(prop);
     return (computed || String(value)).trim();
@@ -448,6 +455,15 @@
 
           var direct = compare(actual, check, label);
           if (!direct) return null;
+
+          // Border and outline widths are snapped to device pixels, so under
+          // browser zoom `min: 1` must mean "at least what 1px computes to here".
+          if ((check.min !== undefined || check.max !== undefined) && SNAPPED_WIDTH.test(check.prop)) {
+            var bounds = Object.assign({}, check);
+            if (bounds.min !== undefined) bounds.min = parseFloat(normalizeCssValue(check.prop, bounds.min + 'px'));
+            if (bounds.max !== undefined) bounds.max = parseFloat(normalizeCssValue(check.prop, bounds.max + 'px'));
+            return compare(actual, bounds, label) ? direct : null;
+          }
           if (check.equals === undefined && check.oneOf === undefined) return direct;
 
           // Second pass through a probe element, so `blue` matches `rgb(0, 0, 255)`.

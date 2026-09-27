@@ -5,8 +5,9 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(new URL('..', import.meta.url).pathname);
+const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PORT = Number(process.argv[2] || process.env.PORT || 4173);
 
 const TYPES = {
@@ -47,7 +48,9 @@ createServer(async (request, response) => {
   const body = await readFile(file);
   response.writeHead(200, {
     'Content-Type': TYPES[extname(file)] || 'application/octet-stream',
-    'Cache-Control': 'no-cache'
+    // no-store, not no-cache: Safari may otherwise reuse a stale ES module
+    // whose exports no longer match the files that import it.
+    'Cache-Control': 'no-store'
   });
   response.end(body);
 }).listen(PORT, () => {

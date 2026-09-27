@@ -5,6 +5,7 @@ export const uz = {
   'app.bootFailed': 'Kursni ishga tushirib bo‘lmadi',
   'app.bootHint': 'Loyihani faylni ikki marta bosib emas, lokal server orqali ochish kerak:',
 
+  'top.home': 'Bosh sahifa',
   'top.courseMap': 'Kurs dasturi',
   'top.previousLesson': 'Oldingi dars',
   'top.nextLesson': 'Keyingi dars',
@@ -47,6 +48,9 @@ export const uz = {
   'editor.placeholder.css': '/* CSS kodingiz */',
   'editor.placeholder.js': '// JavaScript kodingiz',
 
+  'confirm.title': 'Tasdiqlash',
+  'confirm.ok': 'Ha',
+  'confirm.cancel': 'Bekor qilish',
   'confirm.resetTask': 'Topshiriqning boshlang‘ich kodi qaytarilsinmi? O‘zgarishlaringiz yo‘qoladi.',
   'confirm.showSolution': 'Tayyor yechim ko‘rsatilsinmi? Avval maslahatlardan foydalanib ko‘ring.',
   'confirm.resetProgress': 'Barcha natijalar va saqlangan kod o‘chirilsinmi? Buni ortga qaytarib bo‘lmaydi.',

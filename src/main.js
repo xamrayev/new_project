@@ -5,6 +5,10 @@ import { ActivityLog } from './state/activity-log.js';
 import { loadHarness } from './playground/runner.js';
 import { detectLocale, setLocale, t } from './i18n/index.js';
 
+// Every import above has loaded and linked — tells the boot watchdog in
+// course.html that a stuck "Loading…" is not a missing module.
+window.__courseStarted = true;
+
 const root = document.querySelector('#app');
 
 async function start() {

@@ -1,0 +1,28 @@
+{
+  "name": "Web Development — NazarAI",
+  "short_name": "WebDev",
+  "description": "HTML, CSS va JavaScript’ni noldan o‘rganing: 34 dars, 170 amaliy topshiriq va brauzerda avtomatik tekshiruv. IT ga qadam qo‘yayotgan yoshlar uchun.",
+  "lang": "uz",
+  "start_url": "./course.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -80,3 +80,58 @@ export class Modal {
     else this.open();
   }
 }
+
+/**
+ * In-app replacement for window.confirm(). The native dialog can be silenced
+ * by the browser (Firefox's "don't allow this site to prompt you" checkbox) or
+ * by extensions — confirm() then returns false at once and the button looks
+ * dead. This one always shows. Resolves to true only on the confirm button.
+ */
+export function confirmDialog(message, { okLabel = t('confirm.ok'), danger = false } = {}) {
+  return new Promise((resolve) => {
+    const modal = new Modal({ title: t('confirm.title'), className: 'modal--confirm' });
+    modal.scrim.classList.add('scrim--confirm');
+
+    const text = document.createElement('p');
+    text.className = 'confirm__text';
+    text.textContent = message;
+
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'btn btn--sm btn--ghost';
+    cancel.textContent = t('confirm.cancel');
+
+    const ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = danger ? 'btn btn--sm btn--danger' : 'btn btn--sm btn--primary';
+    ok.textContent = okLabel;
+
+    const actions = document.createElement('div');
+    actions.className = 'confirm__actions';
+    actions.append(cancel, ok);
+    modal.body.append(text, actions);
+
+    let answered = false;
+    const finish = (value) => {
+      if (answered) return;
+      answered = true;
+      modal.unmount();
+      resolve(value);
+    };
+    modal.onClose = () => finish(false);
+    cancel.addEventListener('click', () => finish(false));
+    ok.addEventListener('click', () => finish(true));
+
+    // Keys stay inside the dialog so Escape does not also close the log modal
+    // or leave full screen underneath it.
+    modal.root.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') finish(false);
+      event.stopPropagation();
+    });
+
+    modal.mount();
+    document.removeEventListener('keydown', modal.onKeyDown);
+    modal.open();
+    ok.focus();
+  });
+}

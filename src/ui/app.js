@@ -18,7 +18,7 @@ import { renderBlocks } from './markup.js';
 import { Sidebar } from './sidebar.js';
 import { TasksDock } from './tasks-dock.js';
 import { PaneManager } from './panes.js';
-import { Modal } from './modal.js';
+import { Modal, confirmDialog } from './modal.js';
 import { CacheSection, LogView } from './log-view.js';
 import { toast } from './toast.js';
 
@@ -123,6 +123,18 @@ export class App {
     burger.setAttribute('aria-label', t('top.courseMap'));
     burger.addEventListener('click', () => this.sidebar.toggle());
 
+    const home = document.createElement('a');
+    home.className = 'top__home';
+    home.href = getLocale() === 'ru' ? 'ru.html' : './';
+    home.title = t('top.home');
+    home.setAttribute('aria-label', t('top.home'));
+    const logo = document.createElement('img');
+    logo.src = 'assets/favicon.svg';
+    logo.alt = '';
+    logo.width = 28;
+    logo.height = 28;
+    home.append(logo);
+
     const titleBox = document.createElement('div');
     titleBox.className = 'top__title';
     this.lessonTitle = document.createElement('span');
@@ -151,7 +163,7 @@ export class App {
       theme
     );
 
-    this.top.append(burger, titleBox, spacer, this.counter, nav);
+    this.top.append(burger, home, titleBox, spacer, this.counter, nav);
   }
 
   #navButton(text, label, onClick) {
@@ -430,8 +442,8 @@ export class App {
 
   /* ----------------------------------------------------------- task actions */
 
-  resetTask() {
-    if (!window.confirm(t('confirm.resetTask'))) return;
+  async resetTask() {
+    if (!(await confirmDialog(t('confirm.resetTask'), { danger: true }))) return;
     this.progress.clearDraft(this.lesson.id, this.task.id);
     this.playground.configure({ editors: this.lesson.editors, sandbox: this.task.sandbox });
     this.playground.setSource(this.task.starter);
@@ -440,15 +452,15 @@ export class App {
     toast(t('toast.taskReset'), 'info');
   }
 
-  showSolution() {
-    if (!window.confirm(t('confirm.showSolution'))) return;
+  async showSolution() {
+    if (!(await confirmDialog(t('confirm.showSolution'), { okLabel: t('dock.showSolution') }))) return;
     this.playground.setSource(this.task.solution);
     this.log.add('solution');
     toast(t('toast.solutionLoaded'), 'info', 4000);
   }
 
-  resetProgress() {
-    if (!window.confirm(t('confirm.resetProgress'))) return;
+  async resetProgress() {
+    if (!(await confirmDialog(t('confirm.resetProgress'), { danger: true }))) return;
     this.progress.resetAll();
     this.sidebar.render(this.lesson.id);
     this.dock.render();

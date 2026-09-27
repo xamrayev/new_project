@@ -4,11 +4,15 @@
   "private": true,
   "type": "module",
   "description": "Интерактивный курс веб-разработки: 34 урока, 170 практических задач и универсальный playground с автоматической проверкой.",
+  "homepage": "https://your-domain.example/",
   "scripts": {
     "start": "node tools/serve.mjs",
-    "validate": "node tools/validate-course.mjs",
-    "test": "node tools/validate-course.mjs && node tools/run-selftest.mjs",
-    "test:selftest": "node tools/run-selftest.mjs"
+    "validate": "node tools/validate-course.mjs && node tools/build-landing.mjs --check",
+    "test": "npm run validate && node tools/run-selftest.mjs",
+    "test:selftest": "node tools/run-selftest.mjs",
+    "test:solutions": "node tools/check-solution-button.mjs",
+    "build:landing": "node tools/build-landing.mjs",
+    "build:images": "node tools/render-images.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0"

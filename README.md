@@ -36,10 +36,10 @@
 ## Быстрый старт
 
 ```bash
-npm start           # http://localhost:4173
+npm start           # http://localhost:4173 — главная, курс: /course.html
 ```
 
-Открывать `index.html` двойным кликом нельзя: ES-модули и загрузка песочницы
+Открывать страницы двойным кликом нельзя: ES-модули и загрузка песочницы
 требуют http(s). Подойдёт любой статический сервер.
 
 ```bash
@@ -50,7 +50,8 @@ npm test            # валидация + прогон всех 170 решен�
 ## Как устроено
 
 ```
-index.html
+index.html, ru.html                главная страница (uz / ru) — генерируется, см. ниже
+course.html                        сам курс
 ├── src/main.js                    точка входа
 ├── src/course/                    контент курса (данные, не код приложения)
 │   ├── index.js                   сборка и нормализация модулей
@@ -74,7 +75,8 @@ index.html
 │   ├── panes.js                   открыть / закрыть / развернуть панель
 │   ├── log-view.js                журнал и блок очистки кеша
 │   └── modal.js                   модальное окно журнала
-├── tools/                         сервер, валидатор, headless-прогон
+├── assets/                        логотип, иконки, og-image
+├── tools/                         сервер, валидатор, генератор главной, headless-прогон
 └── tests/selftest.html            self-test: решения против собственных проверок
 ```
 
@@ -214,6 +216,32 @@ checks: [
 `npm run validate` показывает покрытие перевода и ругается, если перевод отстал
 от контента — например, в задаче стало на одну проверку больше, чем меток в
 переводе.
+
+## Главная страница и SEO
+
+`index.html` (узбекский) и `ru.html` (русский) — статические страницы: поисковики
+и превью ссылок читают их без JavaScript. Их, а также `sitemap.xml`, `robots.txt`,
+`site.webmanifest` и SEO-блок в `<head>` курса собирает `tools/build-landing.mjs`.
+Числа (уроки, задачи, проверки) и список уроков берутся из самого курса, поэтому
+не расходятся с ним. Руками эти файлы не правят — правят генератор.
+
+Внутри: `title`/`description`/`keywords`, canonical, hreflang (uz, ru, x-default),
+Open Graph и Twitter Card с картинкой 1200×630, JSON-LD (`Course`, `Organization`,
+`CollegeOrUniversity`, `Person`, `WebSite`, `WebPage`, `FAQPage`), иконки и манифест.
+
+**Перед публикацией** укажите настоящий адрес сайта в `package.json → homepage`
+(сейчас там заглушка `https://your-domain.example/`) и пересоберите:
+
+```bash
+npm run build:landing   # страницы, sitemap, robots, манифест
+npm run build:images    # og-image и PNG-иконки (нужен Chrome/Chromium)
+```
+
+`npm run validate` падает, если сгенерированные файлы отстали от курса.
+Старые ссылки вида `/#/css-box-model/3` главная перенаправляет на `course.html`.
+
+На хостинг выкладываются: `index.html`, `ru.html`, `course.html`, `sitemap.xml`,
+`robots.txt`, `site.webmanifest`, папки `src/`, `styles/`, `assets/`.
 
 ## Программа
 

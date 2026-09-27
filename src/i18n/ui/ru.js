@@ -5,6 +5,7 @@ export const ru = {
   'app.bootFailed': 'Не удалось запустить курс',
   'app.bootHint': 'Проект нужно открывать через локальный сервер, а не двойным кликом по файлу:',
 
+  'top.home': 'Главная страница',
   'top.courseMap': 'Программа курса',
   'top.previousLesson': 'Предыдущий урок',
   'top.nextLesson': 'Следующий урок',
@@ -47,6 +48,9 @@ export const ru = {
   'editor.placeholder.css': '/* ваш CSS */',
   'editor.placeholder.js': '// ваш JavaScript',
 
+  'confirm.title': 'Подтверждение',
+  'confirm.ok': 'Да',
+  'confirm.cancel': 'Отмена',
   'confirm.resetTask': 'Вернуть исходный код задачи? Ваши изменения будут потеряны.',
   'confirm.showSolution': 'Показать готовое решение? Попробуйте сначала подсказки.',
   'confirm.resetProgress': 'Удалить весь прогресс и сохранённый код? Действие необратимо.',

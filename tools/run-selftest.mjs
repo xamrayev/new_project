@@ -9,11 +9,12 @@
  *   node tools/run-selftest.mjs --locale=uz     # one locale
  *   node tools/run-selftest.mjs --lesson=js-dom # one lesson
  *   node tools/run-selftest.mjs --from=10 --to=18
+ *   BROWSER=webkit node tools/run-selftest.mjs  # Safari's engine (npx playwright-core install webkit)
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
-import { chromium } from 'playwright-core';
+import { chromium, webkit } from 'playwright-core';
 
 const TIMEOUT_MS = Number(process.env.SELFTEST_TIMEOUT || 600000);
 
@@ -23,7 +24,8 @@ const CHROMIUM_CANDIDATES = [
   '/opt/pw-browsers/chromium/chrome-linux/chrome',
   '/usr/bin/chromium',
   '/usr/bin/chromium-browser',
-  '/usr/bin/google-chrome'
+  '/usr/bin/google-chrome',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ].filter(Boolean);
 
 function findChromium() {
@@ -97,15 +99,18 @@ try {
     );
   }
 
-  const executablePath = findChromium();
-  if (!executablePath) {
-    throw new Error(`Chromium не найден. Проверенные пути:\n  ${CHROMIUM_CANDIDATES.join('\n  ')}`);
+  if (process.env.BROWSER === 'webkit') {
+    browser = await webkit.launch();
+  } else {
+    const executablePath = findChromium();
+    if (!executablePath) {
+      throw new Error(`Chromium не найден. Проверенные пути:\n  ${CHROMIUM_CANDIDATES.join('\n  ')}`);
+    }
+    browser = await chromium.launch({
+      executablePath,
+      args: ['--no-sandbox', '--disable-dev-shm-usage']
+    });
   }
-
-  browser = await chromium.launch({
-    executablePath,
-    args: ['--no-sandbox', '--disable-dev-shm-usage']
-  });
 
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on('pageerror', (error) => console.error('  [page error]', error.message));
