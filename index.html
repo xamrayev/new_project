@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="uz" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web tizimlari — veb-dasturlash kursi | NazarAI</title>
+<meta name="description" content="Web tizimlari fani: 18 ta ma’ruza, 19 ta amaliy ish qo‘llanmasi va mustaqil ta’lim uchun 34 ta interaktiv dars, 170 ta avtomatik tekshiriladigan topshiriq. Kod brauzerning o‘zida ishga tushadi.">
+<meta name="author" content="Xurshidbek Xamrayev, NazarAI laboratoriyasi">
+<meta name="theme-color" content="#0b1020">
+<link rel="canonical" href="https://your-domain.example/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Web Development — NazarAI">
+<meta property="og:title" content="Web tizimlari — ma’ruza, amaliy mashg‘ulot va interaktiv mustaqil ta’lim">
+<meta property="og:description" content="Web tizimlari fani: 18 ta ma’ruza, 19 ta amaliy ish qo‘llanmasi va mustaqil ta’lim uchun 34 ta interaktiv dars, 170 ta avtomatik tekshiriladigan topshiriq. Kod brauzerning o‘zida ishga tushadi.">
+<meta property="og:url" content="https://your-domain.example/">
+<meta property="og:image" content="https://your-domain.example/assets/og-image-uz.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="./assets/favicon-RKLpbvu1.svg" type="image/svg+xml">
+<link rel="icon" href="./assets/favicon-32-D5Ap7x9h.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon-vIh7jHiI.png">
+<link rel="manifest" href="./assets/site-C4NE9YZZ.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&display=swap">
+  <script type="module" crossorigin src="./assets/index-BmthCvBV.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-D132mj-O.css">
+</head>
+<body>
+<div id="app">
+  <div class="boot">Loading…</div>
+</div>
+<script>
+  /*
+   * Boot watchdog. If any ES module fails to load or link (blocked by a content
+   * blocker, a stale cached copy, a network error), the browser silently skips
+   * the whole app and "Loading…" stays forever. This plain script is not a
+   * module, so it still runs and explains what happened.
+   */
+  (function () {
+    var problems = [];
+    var shown = false;
+
+    window.addEventListener('error', function (event) {
+      if (window.__courseStarted) return;
+      var target = event.target;
+      if (target && target !== window && (target.src || target.href)) {
+        // The browser only blames the entry script; walk its imports to name
+        // the file that actually failed.
+        var entry = target.src || target.href;
+        findBroken(entry, {}).then(function (broken) {
+          (broken.length ? broken : [entry]).forEach(function (url) {
+            problems.push('Yuklanmadi / Не загрузилось: ' + url.replace(location.origin, ''));
+          });
+          show();
+        });
+        return;
+      } else {
+        var where = event.filename ? ' — ' + event.filename.replace(location.origin, '') + ':' + event.lineno : '';
+        problems.push((event.message || 'Error') + where);
+      }
+      setTimeout(show, 50);
+    }, true);
+
+    window.addEventListener('load', function () {
+      setTimeout(function () { if (!window.__courseStarted) show(); }, 4000);
+    });
+
+    function findBroken(url, seen) {
+      if (seen[url] || Object.keys(seen).length > 80) return Promise.resolve([]);
+      seen[url] = true;
+      return fetch(url, { cache: 'no-store' }).then(function (response) {
+        if (!response.ok) return [url + ' (' + response.status + ')'];
+        return response.text().then(function (code) {
+          var found = [];
+          // Only real statements at the start of a line — lesson content has
+          // example imports inside string literals.
+          var pattern = /^\s*(?:import|export)\s[^'"`;]*?from\s*['"](\.{1,2}\/[^'"]+)['"]|^\s*import\s*['"](\.{1,2}\/[^'"]+)['"]/gm;
+          var match;
+          while ((match = pattern.exec(code))) found.push(new URL(match[1] || match[2], url).href);
+          return Promise.all(found.map(function (next) { return findBroken(next, seen); }))
+            .then(function (lists) { return [].concat.apply([], lists); });
+        });
+      }, function () { return [url]; });
+    }
+
+    function show() {
+      if (shown || window.__courseStarted) return;
+      shown = true;
+      var box = document.querySelector('#app');
+      if (!box) return;
+      var list = problems.length ? problems : ['src/main.js ishga tushmadi / не запустился'];
+      // The built page loads assets/index-*.js; the source one loads src/main.js
+      // and only works under the Vite dev server (which injects /@vite/client).
+      var unbuilt = document.querySelector('script[src*="src/main.js"]') &&
+        !document.querySelector('script[src*="@vite/client"]');
+      if (unbuilt) {
+        box.innerHTML =
+          '<div class="boot"><h2>Serverga yig‘ilmagan manba kod joylangan · На сервер выложен несобранный исходный код</h2>' +
+          '<pre class="boot__error"></pre>' +
+          '<p>Vue loyihasini hostingga joylashdan oldin yig‘ish kerak · Перед публикацией проект нужно собрать:</p>' +
+          '<ol>' +
+          '<li><code>npm install</code> va · и <code>npm run build</code></li>' +
+          '<li>Hostingga <b>dist/</b> papkasining <b>ichidagi</b> fayllarni yuklang · Загрузите на хостинг <b>содержимое</b> папки <b>dist/</b></li>' +
+          '<li>Yoki GitHub dagi <b>deploy</b> branchidan foydalaning — u yerda tayyor fayllar · Или используйте ветку <b>deploy</b> на GitHub — там готовые файлы</li>' +
+          '</ol></div>';
+        box.querySelector('.boot__error').textContent = list.join('\n');
+        return;
+      }
+      box.innerHTML =
+        '<div class="boot"><h2>Kursni ishga tushirib bo‘lmadi · Не удалось запустить курс</h2>' +
+        '<pre class="boot__error"></pre>' +
+        '<ol>' +
+        '<li>Sahifani keshsiz qayta yuklang · Перезагрузите без кеша: <b>Cmd+Option+R</b> (Safari), <b>Cmd+Shift+R</b> / <b>Ctrl+Shift+R</b></li>' +
+        '<li>Reklama bloklovchi / content blocker kengaytmalarini shu sayt uchun o‘chiring · Отключите блокировщики для этого сайта ' +
+        '(Safari: <b>View → Reload Without Content Blockers</b>)</li>' +
+        '<li>Sahifani <code>npm start</code> orqali oching · Откройте через <code>npm start</code>: <code>http://localhost:4173/</code></li>' +
+        '</ol></div>';
+      box.querySelector('.boot__error').textContent = list.join('\n');
+    }
+  })();
+</script>
+</body>
+</html>
