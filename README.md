@@ -247,6 +247,17 @@ checks: [
 На хостинг выкладывается содержимое `dist/` после `npm run build` — приложение,
 `sitemap.xml`, `robots.txt`, `site.webmanifest` и `assets/` туда уже скопированы.
 
+**Исходники (`src/`, корневой `index.html`) на хостинг не выкладываются** —
+браузер не поймёт `import … from 'vue'`, и страница покажет ошибку
+«yig‘ilmagan manba kod». Два способа получить готовый сайт:
+
+1. Локально: `npm install && npm run build`, затем загрузить **содержимое** `dist/`.
+2. Через GitHub: при каждом push в `main` workflow
+   `.github/workflows/deploy.yml` собирает проект и кладёт результат в ветку
+   `deploy`. Хостинг можно привязать к этой ветке или скачать её ZIP
+   (Code → Download ZIP при выбранной ветке `deploy`). Для GitHub Pages:
+   Settings → Pages → Branch: `deploy`, папка `/ (root)`.
+
 ## Программа
 
 | # | Модуль | Уроки |

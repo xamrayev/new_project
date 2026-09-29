@@ -1,0 +1,39 @@
+# Har bir push da (main) loyihani yig‘adi va tayyor saytni `deploy` branchiga
+# joylaydi. Hostingga shu branch (yoki uning ZIP arxivi) yuklanadi — manba
+# kodni (src/) to‘g‘ridan-to‘g‘ri yuklab bo‘lmaydi, brauzer `import 'vue'` ni
+# tushunmaydi.
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run validate
+      - run: npm run build
+
+      # GitHub Pages uchun: Jekyll fayllarni qayta ishlamasin
+      - run: touch dist/.nojekyll
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: deploy
+          force_orphan: true
+          commit_message: 'Sayt yig‘ildi'

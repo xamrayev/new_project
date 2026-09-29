@@ -85,6 +85,23 @@
       var box = document.querySelector('#app');
       if (!box) return;
       var list = problems.length ? problems : ['src/main.js ishga tushmadi / не запустился'];
+      // The built page loads assets/index-*.js; the source one loads src/main.js
+      // and only works under the Vite dev server (which injects /@vite/client).
+      var unbuilt = document.querySelector('script[src*="src/main.js"]') &&
+        !document.querySelector('script[src*="@vite/client"]');
+      if (unbuilt) {
+        box.innerHTML =
+          '<div class="boot"><h2>Serverga yig‘ilmagan manba kod joylangan · На сервер выложен несобранный исходный код</h2>' +
+          '<pre class="boot__error"></pre>' +
+          '<p>Vue loyihasini hostingga joylashdan oldin yig‘ish kerak · Перед публикацией проект нужно собрать:</p>' +
+          '<ol>' +
+          '<li><code>npm install</code> va · и <code>npm run build</code></li>' +
+          '<li>Hostingga <b>dist/</b> papkasining <b>ichidagi</b> fayllarni yuklang · Загрузите на хостинг <b>содержимое</b> папки <b>dist/</b></li>' +
+          '<li>Yoki GitHub dagi <b>deploy</b> branchidan foydalaning — u yerda tayyor fayllar · Или используйте ветку <b>deploy</b> на GitHub — там готовые файлы</li>' +
+          '</ol></div>';
+        box.querySelector('.boot__error').textContent = list.join('\n');
+        return;
+      }
       box.innerHTML =
         '<div class="boot"><h2>Kursni ishga tushirib bo‘lmadi · Не удалось запустить курс</h2>' +
         '<pre class="boot__error"></pre>' +
