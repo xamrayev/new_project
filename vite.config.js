@@ -1,5 +1,5 @@
 /*
- * Vite: three pages (uz landing, ru landing, the course app) built side by side.
+ * Vite: the course app (index.html → src/main.js).
  *
  * `base: './'` keeps every URL relative, so dist/ can be dropped into any
  * folder of any static host. Files the pages only name by URL — the manifest,
@@ -35,14 +35,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Lesson, lecture and guide texts are data bundled with the app (~750 kB,
-    // ~210 kB gzipped); one chunk is fine for a course that is read offline-first.
-    chunkSizeWarningLimit: 1200,
+    // Lesson, lecture and guide texts are data bundled with the app (~1.2 MB,
+    // ~370 kB gzipped); one chunk is fine for a course that is read offline-first.
+    chunkSizeWarningLimit: 1400,
     rollupOptions: {
       input: {
-        index: resolve(ROOT, 'index.html'),
-        ru: resolve(ROOT, 'ru.html'),
-        course: resolve(ROOT, 'course.html')
+        index: resolve(ROOT, 'index.html')
       }
     }
   }

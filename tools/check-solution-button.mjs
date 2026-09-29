@@ -60,7 +60,7 @@ try {
     const lessons = course.modules.flatMap((module) => module.lessons);
     const showLabel = locale === 'uz' ? 'Yechimni ko‘rsatish' : 'Показать решение';
 
-    await page.goto(`http://localhost:${PORT}/course.html#/mustaqil`);
+    await page.goto(`http://localhost:${PORT}/index.html#/mustaqil`);
     await page.waitForSelector('.task-panel__tools');
 
     for (const lesson of lessons) {

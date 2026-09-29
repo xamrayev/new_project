@@ -1,6 +1,6 @@
 /*
  * Routes. Hash history: the course is a set of static files, so every URL has
- * to resolve to course.html on any host without server rewrites.
+ * to resolve to index.html on any host without server rewrites.
  *
  *   #/                       hub — choose a direction
  *   #/darslar                class sessions: lectures and practicals
@@ -9,8 +9,7 @@
  *   #/mustaqil/js-dom/2      self-study workspace, lesson + task
  *   #/sandbox                free playground
  *
- * Links from before the split (`#/js-dom/2`, still printed on the landing
- * pages) are redirected into the self-study track.
+ * Links from before the split (`#/js-dom/2`) are redirected into the self-study track.
  */
 import { createRouter, createWebHashHistory } from 'vue-router';
 import HubView from './views/HubView.vue';

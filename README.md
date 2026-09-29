@@ -41,7 +41,7 @@ playground (`#/sandbox`).
 
 ```bash
 npm install
-npm run dev         # http://localhost:4173 — главная, курс: /course.html
+npm run dev         # http://localhost:4173
 npm run build       # dist/ — статические файлы для любого хостинга
 npm run preview     # посмотреть сборку
 ```
@@ -49,7 +49,7 @@ npm run preview     # посмотреть сборку
 ```bash
 npm run validate        # структура курса, лекций и практик (без браузера)
 npm test                # валидация + прогон всех 170 решений в реальном браузере
-npm run test:examples   # все 90 примеров лекций/практик в песочнице
+npm run test:examples   # все 103 примера лекций/практик в песочнице
 npm run test:solutions  # сборка + «Показать решение» → «Проверить» в самом приложении
 ```
 
@@ -61,8 +61,7 @@ npm run test:solutions  # сборка + «Показать решение» →
 строчку.
 
 ```
-index.html, ru.html                главная страница (uz / ru) — генерируется, см. ниже
-course.html                        приложение (Vue)
+index.html                         приложение (Vue) и SEO-блок
 ├── src/main.js                    точка входа: createApp, router, harness в бандле
 ├── src/App.vue, src/router.js     маршруты (hash history — работает на любом статическом хостинге)
 ├── src/views/
@@ -235,30 +234,17 @@ checks: [
 от контента — например, в задаче стало на одну проверку больше, чем меток в
 переводе.
 
-## Главная страница и SEO
+## Публикация
 
-`index.html` (узбекский) и `ru.html` (русский) — статические страницы: поисковики
-и превью ссылок читают их без JavaScript. Их, а также `sitemap.xml`, `robots.txt`,
-`site.webmanifest` и SEO-блок в `<head>` курса собирает `tools/build-landing.mjs`.
-Числа (уроки, задачи, проверки) и список уроков берутся из самого курса, поэтому
-не расходятся с ним. Руками эти файлы не правят — правят генератор.
+В `index.html` — SEO-блок курса (title, description, Open Graph, иконки,
+манифест); рядом лежат `sitemap.xml`, `robots.txt` и `site.webmanifest`.
+**Перед публикацией** замените в них заглушку `https://your-domain.example/`
+на настоящий адрес сайта.
 
-Внутри: `title`/`description`/`keywords`, canonical, hreflang (uz, ru, x-default),
-Open Graph и Twitter Card с картинкой 1200×630, JSON-LD (`Course`, `Organization`,
-`CollegeOrUniversity`, `Person`, `WebSite`, `WebPage`, `FAQPage`), иконки и манифест.
+Старые ссылки вида `/#/css-box-model/3` приложение само перенаправляет в
+раздел самостоятельной работы.
 
-**Перед публикацией** укажите настоящий адрес сайта в `package.json → homepage`
-(сейчас там заглушка `https://your-domain.example/`) и пересоберите:
-
-```bash
-npm run build:landing   # страницы, sitemap, robots, манифест
-npm run build:images    # og-image и PNG-иконки (нужен Chrome/Chromium)
-```
-
-`npm run validate` падает, если сгенерированные файлы отстали от курса.
-Старые ссылки вида `/#/css-box-model/3` главная перенаправляет на `course.html`.
-
-На хостинг выкладывается содержимое `dist/` после `npm run build` — страницы,
+На хостинг выкладывается содержимое `dist/` после `npm run build` — приложение,
 `sitemap.xml`, `robots.txt`, `site.webmanifest` и `assets/` туда уже скопированы.
 
 ## Программа

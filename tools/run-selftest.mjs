@@ -91,7 +91,7 @@ let browser = null;
 let exitCode = 0;
 
 try {
-  if (!(await waitForServer(`http://localhost:${PORT}/index.html`, () => serverExit === null))) {
+  if (!(await waitForServer(`http://localhost:${PORT}/tests/selftest.html`, () => serverExit === null))) {
     throw new Error(
       serverExit === null
         ? 'локальный сервер не поднялся'

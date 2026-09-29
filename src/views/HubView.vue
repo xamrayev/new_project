@@ -10,7 +10,7 @@ import { computed, onMounted } from 'vue';
 import AppHeader from '../components/AppHeader.vue';
 import { LECTURES, PRACTICALS } from '../classes/index.js';
 import { classes, classesTick, course, progress, progressTick } from '../composables/store.js';
-import { locale, t } from '../composables/i18n.js';
+import { t } from '../composables/i18n.js';
 
 const classStats = computed(() => {
   void classesTick.value;
@@ -38,8 +38,6 @@ const studyStats = computed(() => {
     percent: stats.tasksTotal ? Math.round((stats.tasksDone / stats.tasksTotal) * 100) : 0
   };
 });
-
-const landing = computed(() => (locale.value === 'ru' ? 'ru.html' : './'));
 
 onMounted(() => { document.title = t('hub.documentTitle'); });
 </script>
@@ -110,10 +108,6 @@ onMounted(() => { document.title = t('hub.documentTitle'); });
             <span aria-hidden="true">⌨</span>
             <span><strong>{{ t('sandbox.title') }}</strong><small>{{ t('hub.sandboxText') }}</small></span>
           </RouterLink>
-          <a class="hub-extra__link" :href="landing">
-            <span aria-hidden="true">ℹ</span>
-            <span><strong>{{ t('top.home') }}</strong><small>{{ t('hub.landingText') }}</small></span>
-          </a>
         </div>
       </div>
     </main>

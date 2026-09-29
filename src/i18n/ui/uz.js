@@ -5,7 +5,6 @@ export const uz = {
   'app.bootFailed': 'Kursni ishga tushirib bo‘lmadi',
   'app.bootHint': 'Loyihani faylni ikki marta bosib emas, lokal server orqali ochish kerak:',
 
-  'top.home': 'Bosh sahifa',
   'top.courseMap': 'Kurs dasturi',
   'top.previousLesson': 'Oldingi dars',
   'top.nextLesson': 'Keyingi dars',
@@ -159,7 +158,6 @@ export const uz = {
   'hub.continueStudy': '{number}-darsdan davom etish',
   'hub.startStudy': 'Boshlash',
   'hub.sandboxText': 'HTML, CSS va JS ni erkin sinab ko‘rish uchun bo‘sh maydon',
-  'hub.landingText': 'Kurs haqida umumiy ma’lumot',
 
   'classes.subtitle': 'Ma’ruzalar va amaliy mashg‘ulotlar',
   'classes.intro': 'Fan dasturidagi mavzular. Ma’ruza matnini o‘qib chiqqach «O‘qildi» deb belgilang; amaliy ishda har bir qadamni bajarganingiz sari belgilab boring — belgilar brauzerda saqlanadi.',

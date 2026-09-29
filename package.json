@@ -3,20 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Web tizimlari kursi (Vue 3): 18 ta ma’ruza, 12 ta amaliy mashg‘ulot qo‘llanmasi va mustaqil ta’lim uchun 34 ta interaktiv dars, 170 ta avtomatik tekshiriladigan topshiriq.",
+  "description": "Web tizimlari kursi (Vue 3): 18 ta ma’ruza, 19 ta amaliy mashg‘ulot qo‘llanmasi va mustaqil ta’lim uchun 34 ta interaktiv dars, 170 ta avtomatik tekshiriladigan topshiriq.",
   "homepage": "https://your-domain.example/",
   "scripts": {
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview --port 4173",
-    "serve:static": "node tools/serve.mjs",
-    "validate": "node tools/validate-course.mjs && node tools/validate-classes.mjs && node tools/build-landing.mjs --check",
+    "validate": "node tools/validate-course.mjs && node tools/validate-classes.mjs",
     "test": "npm run validate && node tools/run-selftest.mjs",
     "test:selftest": "node tools/run-selftest.mjs",
     "test:solutions": "npm run build && node tools/check-solution-button.mjs",
-    "build:landing": "node tools/build-landing.mjs",
-    "build:images": "node tools/render-images.mjs",
     "test:examples": "node tools/check-examples.mjs"
   },
   "devDependencies": {

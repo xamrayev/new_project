@@ -3,7 +3,7 @@
   "short_name": "WebDev",
   "description": "HTML, CSS va JavaScript’ni noldan o‘rganing: 34 dars, 170 amaliy topshiriq va brauzerda avtomatik tekshiruv. IT ga qadam qo‘yayotgan yoshlar uchun.",
   "lang": "uz",
-  "start_url": "./course.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0b1020",
