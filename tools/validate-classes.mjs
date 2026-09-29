@@ -34,8 +34,9 @@ function checkScript(where, source) {
 
 function compiles(where, code) {
   try {
-    // Wrapped in an async function so top-level `await` in examples is fine.
-    new Function(`return (async () => {\n${code}\n})`);
+    // Compiled as a plain function body: the sandbox runs examples as a classic
+    // <script>, where top-level `await` is a syntax error.
+    new Function(code);
   } catch (error) {
     fail(where, `JS sintaksis xatosi: ${error.message}`);
   }
@@ -110,7 +111,7 @@ function checkNumbers(list, prefix, expected) {
 }
 
 checkNumbers(LECTURES, 'M', 18);
-checkNumbers(PRACTICALS, 'A', 12);
+checkNumbers(PRACTICALS, 'A', 19);
 
 LECTURES.forEach((lecture) => {
   const where = lecture.code;

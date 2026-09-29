@@ -1,6 +1,6 @@
 /*
- * Dars mashg'ulotlari: fan dasturidagi 18 ta ma'ruza (M1–M18) va 12 ta amaliy
- * mashg'ulot (A1–A12).
+ * Dars mashg'ulotlari: fan dasturidagi 18 ta ma'ruza (M1–M18) va 19 ta amaliy
+ * mashg'ulot (A1–A19).
  *
  * Har bir mavzu alohida faylda — ma'ruza matni `lectures/`, amaliy ish
  * qo'llanmasi `practicals/` ichida. Bu fayl ularni yig'adi, raqamlaydi va
@@ -38,10 +38,17 @@ import a9 from './practicals/a09.js';
 import a10 from './practicals/a10.js';
 import a11 from './practicals/a11.js';
 import a12 from './practicals/a12.js';
+import a13 from './practicals/a13.js';
+import a14 from './practicals/a14.js';
+import a15 from './practicals/a15.js';
+import a16 from './practicals/a16.js';
+import a17 from './practicals/a17.js';
+import a18 from './practicals/a18.js';
+import a19 from './practicals/a19.js';
 
 // Explicit imports (not import.meta.glob) so Node tooling can load the index too.
 const LECTURE_FILES = [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18];
-const PRACTICAL_FILES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12];
+const PRACTICAL_FILES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19];
 
 const byNumber = (a, b) => a.number - b.number;
 

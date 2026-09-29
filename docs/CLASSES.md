@@ -4,7 +4,7 @@ Kursda ikki yo‘nalish bor:
 
 | Yo‘nalish | Qayerda | Nima |
 |---|---|---|
-| **Dars mashg‘ulotlari** | `src/classes/` | Fan dasturidagi 18 ta ma’ruza matni (M1–M18) va 12 ta amaliy mashg‘ulotni bajarish qo‘llanmasi (A1–A12) |
+| **Dars mashg‘ulotlari** | `src/classes/` | Fan dasturidagi 18 ta ma’ruza matni (M1–M18) va 19 ta amaliy mashg‘ulotni bajarish qo‘llanmasi (A1–A19) |
 | **Mustaqil ta’lim** | `src/course/` | 34 ta interaktiv dars, 170 ta avtomatik tekshiriladigan topshiriq (format: [AUTHORING.md](AUTHORING.md)) |
 
 Ushbu hujjat birinchi yo‘nalish haqida.
@@ -18,7 +18,7 @@ src/classes/
 ├── mock-api.js       «Sinab ko‘rish» dagi fetch() misollari uchun o‘quv serveri
 ├── sql-lab.js        brauzerdagi SQL laboratoriyasi (SQLite, sql.js)
 ├── lectures/m01.js … m18.js
-└── practicals/a01.js … a12.js
+└── practicals/a01.js … a19.js
 ```
 
 Yangi mavzu qo‘shilsa, uni `index.js` dagi import ro‘yxatiga ham yozing.
