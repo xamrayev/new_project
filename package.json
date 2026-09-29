@@ -3,18 +3,29 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Интерактивный курс веб-разработки: 34 урока, 170 практических задач и универсальный playground с автоматической проверкой.",
+  "description": "Web tizimlari kursi (Vue 3): 18 ta ma’ruza, 12 ta amaliy mashg‘ulot qo‘llanmasi va mustaqil ta’lim uchun 34 ta interaktiv dars, 170 ta avtomatik tekshiriladigan topshiriq.",
   "homepage": "https://your-domain.example/",
   "scripts": {
-    "start": "node tools/serve.mjs",
-    "validate": "node tools/validate-course.mjs && node tools/build-landing.mjs --check",
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "serve:static": "node tools/serve.mjs",
+    "validate": "node tools/validate-course.mjs && node tools/validate-classes.mjs && node tools/build-landing.mjs --check",
     "test": "npm run validate && node tools/run-selftest.mjs",
     "test:selftest": "node tools/run-selftest.mjs",
-    "test:solutions": "node tools/check-solution-button.mjs",
+    "test:solutions": "npm run build && node tools/check-solution-button.mjs",
     "build:landing": "node tools/build-landing.mjs",
-    "build:images": "node tools/render-images.mjs"
+    "build:images": "node tools/render-images.mjs",
+    "test:examples": "node tools/check-examples.mjs"
   },
   "devDependencies": {
-    "playwright-core": "^1.63.0"
+    "@vitejs/plugin-vue": "^6.0.9",
+    "playwright-core": "^1.63.0",
+    "vite": "^8.3.1"
+  },
+  "dependencies": {
+    "vue": "^3.5.43",
+    "vue-router": "^4.6.4"
   }
 }

@@ -4,6 +4,9 @@
  * Also reloads once per lesson to confirm the revealed solution is saved as
  * the draft.
  *
+ * Runs against the production build (dist/, served by `vite preview`), so
+ * build first — `npm run test:solutions` does both.
+ *
  * Usage: CHROMIUM_PATH=... node tools/check-solution-button.mjs [--lesson=id]
  *        DPR=1.8 ... simulates browser zoom (90% on a 2x screen); border widths
  *        then compute to fractions such as 0.55px.
@@ -16,8 +19,8 @@ import { buildCourse } from '../src/course/index.js';
 const PORT = 4300 + Math.floor(Math.random() * 500);
 const onlyLesson = (process.argv.find((a) => a.startsWith('--lesson=')) || '').split('=')[1];
 
-const server = spawn(process.execPath, ['tools/serve.mjs', String(PORT)], { stdio: 'ignore' });
-await new Promise((resolve) => setTimeout(resolve, 600));
+const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
+await new Promise((resolve) => setTimeout(resolve, 1500));
 
 const browser = process.env.BROWSER === 'webkit'
   ? await webkit.launch()
@@ -57,7 +60,7 @@ try {
     const lessons = course.modules.flatMap((module) => module.lessons);
     const showLabel = locale === 'uz' ? 'Yechimni ko‘rsatish' : 'Показать решение';
 
-    await page.goto(`http://localhost:${PORT}/course.html`);
+    await page.goto(`http://localhost:${PORT}/course.html#/mustaqil`);
     await page.waitForSelector('.task-panel__tools');
 
     for (const lesson of lessons) {
@@ -66,10 +69,11 @@ try {
       for (const task of lesson.tasks) {
         const where = `[${locale}] ${lesson.id} #${task.position}`;
         tested++;
-        await page.evaluate((hash) => { location.hash = hash; }, `#/${lesson.id}/${task.position}`);
+        const hash = `#/mustaqil/${lesson.id}/${task.position}`;
+        await page.evaluate((target) => { location.hash = target; }, hash);
         await page.waitForFunction(
-          (hash) => location.hash === hash && document.querySelector('.task-panel__tools'),
-          `#/${lesson.id}/${task.position}`
+          (target) => location.hash === target && document.querySelector('.task-panel__tools'),
+          hash
         );
         await page.waitForTimeout(150);
 

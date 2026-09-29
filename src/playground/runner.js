@@ -8,6 +8,15 @@ import { sandboxMessages, sandboxPhrases, getLocale, t } from '../i18n/index.js'
 const HARNESS_URL = new URL('./harness.js', import.meta.url);
 let harnessPromise = null;
 
+/**
+ * Hands the harness source over directly. The Vue build bundles it as a string
+ * (`harness.js?raw`), so nothing has to be fetched at run time; plain-module
+ * pages such as tests/selftest.html skip this and fall back to fetching.
+ */
+export function provideHarness(source) {
+  harnessPromise = Promise.resolve(source);
+}
+
 /** Loads the harness source once and caches it. */
 export function loadHarness() {
   if (!harnessPromise) {
@@ -138,7 +147,15 @@ export class SandboxRunner {
     this.pendingChecks = new Map();
     this.listeners = { console: [], storage: [], ready: [] };
     this.storage = {};
-    window.addEventListener('message', (event) => this.#onMessage(event));
+    this.onMessage = (event) => this.#onMessage(event);
+    window.addEventListener('message', this.onMessage);
+  }
+
+  /** Stops listening; the runner of an unmounted playground must not linger. */
+  destroy() {
+    window.removeEventListener('message', this.onMessage);
+    this.pendingChecks.forEach((pending) => clearTimeout(pending.timer));
+    this.pendingChecks.clear();
   }
 
   on(event, callback) {
