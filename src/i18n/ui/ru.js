@@ -157,6 +157,8 @@ export const ru = {
   'hub.studyProgress': '{lessons}/{lessonsTotal} уроков · {tasks}/{tasksTotal} задач',
   'hub.continueStudy': 'Продолжить с урока {number}',
   'hub.startStudy': 'Начать',
+  'top.home': 'Главная',
+  'hub.landingText': 'Общая информация о курсе',
   'hub.sandboxText': 'Пустое поле, чтобы свободно пробовать HTML, CSS и JS',
 
   'classes.subtitle': 'Лекции и практические занятия',

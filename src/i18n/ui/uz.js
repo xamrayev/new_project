@@ -157,6 +157,8 @@ export const uz = {
   'hub.studyProgress': '{lessons}/{lessonsTotal} dars · {tasks}/{tasksTotal} topshiriq',
   'hub.continueStudy': '{number}-darsdan davom etish',
   'hub.startStudy': 'Boshlash',
+  'top.home': 'Bosh sahifa',
+  'hub.landingText': 'Kurs haqida umumiy ma’lumot',
   'hub.sandboxText': 'HTML, CSS va JS ni erkin sinab ko‘rish uchun bo‘sh maydon',
 
   'classes.subtitle': 'Ma’ruzalar va amaliy mashg‘ulotlar',

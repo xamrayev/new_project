@@ -7,6 +7,7 @@ import harnessSource from './playground/harness.js?raw';
 import { t } from './composables/i18n.js';
 // app.css is linked from index.html so the boot screen is styled even if this bundle fails.
 import '../styles/classes.css';
+import '../styles/landing.css';
 
 // Every import above has loaded and linked — tells the boot watchdog in
 // index.html that a stuck "Loading…" is not a missing module.

@@ -104,6 +104,10 @@ onMounted(() => { document.title = t('hub.documentTitle'); });
         </div>
 
         <div class="hub-extra">
+          <RouterLink class="hub-extra__link" :to="{ name: 'landing' }">
+            <span aria-hidden="true">ℹ</span>
+            <span><strong>{{ t('top.home') }}</strong><small>{{ t('hub.landingText') }}</small></span>
+          </RouterLink>
           <RouterLink class="hub-extra__link" :to="{ name: 'sandbox' }">
             <span aria-hidden="true">⌨</span>
             <span><strong>{{ t('sandbox.title') }}</strong><small>{{ t('hub.sandboxText') }}</small></span>
